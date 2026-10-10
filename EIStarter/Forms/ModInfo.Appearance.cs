@@ -27,7 +27,7 @@ namespace EIStarter
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
             Font = new Font("Segoe UI", 11F);
-            Text = UiText.Get("ModInfo");
+            Text = "ReStarter — " + UiText.Get("ModInfo");
 
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));

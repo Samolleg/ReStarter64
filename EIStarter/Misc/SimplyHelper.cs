@@ -39,49 +39,10 @@ namespace EIStarter
 
         public static bool IsGameRuning()
         {
-            // имя процесса (без расширения)
-            string processName = StarterForm.ExeName.Replace(".exe", "");
-            string defaultProcessName = "game";
-            string windowTitle = "Evil Islands";
-
-            foreach (Process process in Process.GetProcesses())
-            {
-                if (
-                    (
-                    process.ProcessName.Equals(defaultProcessName, StringComparison.OrdinalIgnoreCase)
-                    ||
-                    process.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)
-                    )
-                    &&
-                    (
-                    //process.MainWindowTitle.Equals(windowTitle, StringComparison.OrdinalIgnoreCase) ||
-                    process.MainWindowTitle.ToLower().Contains("evil") && 
-                    process.MainWindowTitle.ToLower().Contains("islands")
-                    )
-                    )
-                {
-                    //Console.WriteLine($"Найден процесс: {process.ProcessName}, ID: {process.Id}, Заголовок окна: {process.MainWindowTitle}");
-                    return true;
-                }
-            }
+            foreach (var process in Process.GetProcessesByName("EIRebuild"))
+                using (process) if (!process.HasExited) return true;
             return false;
         }
-
-        public static bool ValidateExeName(string exename)
-        {
-            if (string.IsNullOrWhiteSpace(exename))
-                return false;
-
-            Regex regex = new Regex(@"^[^\\/:*?""<>|\r\n]+$");
-            if (!regex.IsMatch(exename))
-            {
-                MessageBox.Show("Err666: └ї Є√ ярфыр, їрЎъхЁ эхт·хсхээ√щ!\r\nGame.exe path is incorrect!");
-                return false;
-            }
-
-            return true;
-        }
-
         public static string ComputeFileHash(string filePath)
         {
             using (var sha256 = SHA256.Create())

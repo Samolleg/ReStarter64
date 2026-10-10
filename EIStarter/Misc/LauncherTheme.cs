@@ -38,7 +38,7 @@ namespace EIStarter
             using (var icon = new Icon(stream)) return (Icon)icon.Clone();
         }
 
-        public static bool Dark = new IniFile("starter.config").Read("UiTheme", "Settings", "graphite") != "light";
+        public static bool Dark = new IniFile("restarter.config").Read("UiTheme", "Settings", "graphite") != "light";
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
 

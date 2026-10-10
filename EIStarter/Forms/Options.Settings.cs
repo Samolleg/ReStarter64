@@ -8,9 +8,9 @@ namespace EIStarter
 {
     public partial class Options
     {
-        private readonly SettingsProfile profile;
+        private SettingsProfile profile;
         private Dictionary<string, SettingsProfile.Value> initialSettings, initialPaths;
-        private string initialExeName;
+
         private readonly HashSet<string> unknownCameraBools = new HashSet<string>();
         private static void SelectIndex(ComboBox combo, int index) { combo.SelectedIndex = index >= 0 && index < combo.Items.Count ? index : -1; }
         private object ReadGame(string section, string key) { return profile.Read(SettingsProfile.Root + @"\EvilIslands\" + section, key); }
@@ -43,12 +43,7 @@ namespace EIStarter
                         throw new InvalidOperationException(UiText.Get("InvalidResolution"));
                 }
             }
-            if (pathsOnly)
-            {
-                if (NTRtbExeName.Text != initialExeName && (!SimplyHelper.ValidateExeName(NTRtbExeName.Text) || !File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Engine",NTRtbExeName.Text))))
-                    throw new InvalidOperationException(UiText.Get("InvalidSettingsExe"));
-            }
-            else ValidateCamera(changes);
+            if (!pathsOnly) ValidateCamera(changes);
             return changes;
         }
         private void ValidateCamera(List<SettingsProfile.Value> changes)
@@ -81,6 +76,27 @@ namespace EIStarter
                     throw new InvalidOperationException(UiText.Get("InvalidCameraRange"));
             }
         }
+        private void ResetDefaults()
+        {
+            var active = profile;
+            string cd = NTRtbPathCD.Text, resources = NTRtbPathRes.Text, work = NTRtbPathGameWork.Text;
+            try
+            {
+                profile = new SettingsProfile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "restarter-defaults.xml"));
+                unknownCameraBools.Clear();
+                cbbResolutions.SelectedIndex = -1;
+                initSettings();
+                PrepareUnspecifiedSettings();
+                CameraResetRequested?.Invoke();
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "ReStarter", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            finally
+            {
+                profile = active;
+                NTRtbPathCD.Text = cd; NTRtbPathRes.Text = resources; NTRtbPathGameWork.Text = work;
+            }
+        }
+        private event Action CameraResetRequested;
         private void SaveSettings(bool pathsOnly)
         {
             DialogResult = DialogResult.None;
@@ -92,7 +108,7 @@ namespace EIStarter
                 if (pathsOnly)
                 {
                     initialPaths = new Dictionary<string, SettingsProfile.Value>(profile.Plan);
-                    StarterForm.ExeName = initialExeName = NTRtbExeName.Text;
+
                 }
                 else
                 {

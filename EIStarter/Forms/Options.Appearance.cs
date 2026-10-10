@@ -21,6 +21,8 @@ namespace EIStarter
                 {
                     var source = new CheckBox { Name = key, Checked = (bool)value };
                     if (unknownCameraBools.Contains(property.Name)) source.CheckState = CheckState.Indeterminate;
+                    CameraResetRequested += () => source.CheckState = unknownCameraBools.Contains(property.Name)
+                        ? CheckState.Indeterminate : (bool)property.GetValue(model) ? CheckState.Checked : CheckState.Unchecked;
                     var toggle = SelectionControls.Toggle(source);
                     source.CheckStateChanged += (sender, args) => { unknownCameraBools.Remove(property.Name); property.SetValue(model, source.Checked); };
                     toggle.Disposed += (sender, args) => source.Dispose();
@@ -30,6 +32,13 @@ namespace EIStarter
                 {
                     var editor = new TextBox { Name = key, Text = (value is float f && float.IsNaN(f)) || (value is int n && n == int.MinValue) ? "" : property.Converter.ConvertToString(value), Font = Font };
                     var errors = inputErrors;
+                    CameraResetRequested += () => {
+                        object current = property.GetValue(model);
+                        editor.Text = (current is float number && float.IsNaN(number)) || (current is int integer && integer == int.MinValue)
+                            ? "" : property.Converter.ConvertToString(current);
+                        editor.Modified = false;
+                        errors.SetError(editor, "");
+                    };
 
                     editor.Validating += (sender, args) =>
                     {
@@ -103,6 +112,7 @@ namespace EIStarter
             inputErrors = new ErrorProvider { ContainerControl = this };
             Disposed += (sender, args) => inputErrors.Dispose();
             UiText.Apply(this);
+            Text = "ReStarter — " + UiText.Get("Settings");
             splitContainer1.Visible = false; // Keep the existing values and localisation model.
             FormBorderStyle = FormBorderStyle.Sizable;
             Font = new Font("Segoe UI", 11F);
@@ -160,7 +170,7 @@ namespace EIStarter
                 Setting(pages[3], field.Item1.Text, line);
             }
             NTRtbExeName.Font = Font;
-            Setting(pages[3], lbEXEName.Text, NTRtbExeName);
+            Setting(pages[3], lbEXEName.Text, new Label { AutoSize = true, Text = @"Engine\EIRebuild.exe" });
             var savePaths = SelectionControls.Button(btApplyPaths.Text);
             savePaths.Click += btApplyPaths_Click;
             pages[3].Controls.Add(savePaths);
@@ -201,6 +211,11 @@ namespace EIStarter
             apply.Tag = "primary";
             footer.Controls.Add(cancel);
             footer.Controls.Add(apply);
+            var reset = SelectionControls.Button(UiText.Get("ResetDefaults"));
+            reset.Name = "resetDefaults";
+            reset.CausesValidation = false;
+            reset.Click += (sender, args) => ResetDefaults();
+            footer.Controls.Add(reset);
             CancelButton = cancel;
             root.Controls.Add(footer, 0, 1);
             root.SetColumnSpan(footer, 2);

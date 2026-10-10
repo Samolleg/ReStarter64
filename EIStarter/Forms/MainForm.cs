@@ -23,7 +23,7 @@ namespace EIStarter
         public string theme = "";
 
         public string design_dir = @"design\";
-        public static string ExeName = @"game.exe";
+        public const string ExeName = "EIRebuild.exe";
 
         public bool isusecustomskins = true;
 
@@ -80,7 +80,7 @@ namespace EIStarter
             EnumerateLangs();
 
 
-            IniFile cfg = new("starter.config");
+            IniFile cfg = new("restarter.config");
 
             theme = cfg.Read("Theme", "Settings", "");
 
@@ -89,11 +89,7 @@ namespace EIStarter
             if (!string.IsNullOrWhiteSpace(tempconv))
                 isINImods = Convert.ToBoolean(tempconv);
 
-            string tempExeName = cfg.Read("ExeName", "Settings", "game.exe"); // custom EXE
-            if (SimplyHelper.ValidateExeName(tempExeName))
-                ExeName = tempExeName;
-
-            string currentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+string currentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             if (!string.IsNullOrWhiteSpace(currentLanguage))
                 lang = cfg.Read("language", "Settings", currentLanguage);
             else
@@ -667,50 +663,18 @@ namespace EIStarter
         private void button1_Click(object sender, EventArgs e)
         {
             BtnS1(sender);
-
-            if (!SimplyHelper.ValidateExeName(ExeName))
-                ExeName = "game.exe";
-
-            string engine_path = @$"Engine\{ExeName}";
-            if (File.Exists(engine_path))
+            try
             {
-                ProcessStartInfo start = new($@"{Directory.GetCurrentDirectory()}\{engine_path}")
-                {
-                    WorkingDirectory = $@"{Directory.GetCurrentDirectory()}\Engine",
-                    UseShellExecute = false
-                };
-                try
-                {
-#if WINE_COMPAT
-                    WineCompatibility.PrepareGameStart(start);
-#endif
-                    if (StandalonePackage.Present(AppDomain.CurrentDomain.BaseDirectory))
-                    {
-                        if (cbbMod.SelectedIndex < 0) throw new InvalidOperationException("Select a mod first.");
-                        if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ExeName)).Any())
-                            throw new InvalidOperationException("Close the running game before starting this copy.");
-                        string modPath = Path.GetDirectoryName(Path.GetFullPath(mods[cbbMod.SelectedIndex].path));
-                        var paths = StandalonePackage.Paths(AppDomain.CurrentDomain.BaseDirectory, modPath, ExeName);
-                        StandalonePackage.PrepareDisplay();
-                        Program.StandaloneGame = new StandaloneSession(paths);
-                        Program.StandaloneGame.Start(start);
-                        Application.Exit();
-                    }
-                    else if (Process.Start(start) != null) Application.Exit();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    BtnS0(sender);
-                }
+                var start = RebuildLaunch.Prepare(AppDomain.CurrentDomain.BaseDirectory);
+                if (SimplyHelper.IsGameRuning()) throw new InvalidOperationException(UiText.Get("GameRunning"));
+                if (Process.Start(start) != null) Application.Exit();
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show(string.Format(UiText.Get("NotFound"), engine_path));
+                MessageBox.Show(this, ex.Message, "ReStarter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 BtnS0(sender);
             }
         }
-
         private void button2_Click(object sender, EventArgs e)
         {
             BtnS1(sender);
@@ -745,29 +709,7 @@ namespace EIStarter
             BtnS0(sender);
         }
 
-        private void button5_Click(object sender, EventArgs e)
-        {
-            BtnS1(sender);
-            if (File.Exists(@".\uninstall.exe"))
-            {
-                DialogResult rez = MessageBox.Show(UiText.Get("ConfirmUninstall"), null, MessageBoxButtons.YesNo);
-                if (rez != DialogResult.Yes)
-                    return;
-
-                ProcessStartInfo start = new(Directory.GetCurrentDirectory() + @".\uninstall.exe")
-                {
-                    WorkingDirectory = Directory.GetCurrentDirectory(),
-                    UseShellExecute = false
-                };
-                if (Process.Start(start) != null)
-                    Application.Exit();
-            }
-            else
-            {
-                MessageBox.Show(string.Format(UiText.Get("NotFound"), "Uninstall.exe"));
-                BtnS0(sender);
-            }
-        }
+        private void button5_Click(object sender, EventArgs e) { }
 
         private void button6_Click(object sender, EventArgs e)
         {
@@ -835,7 +777,7 @@ namespace EIStarter
 
         private void StarterForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            IniFile cfg = new("starter.config");
+            IniFile cfg = new("restarter.config");
 
             if (cbbMod.SelectedIndex >= 0)
                 cfg.Write("ModSel", mods[cbbMod.SelectedIndex].path, "Settings");
@@ -843,7 +785,7 @@ namespace EIStarter
             cfg.Write("Theme", theme, "Settings");
             cfg.Write("ModSkins", isusecustomskins.ToString(), "Settings");
             cfg.Write("UsingINIconfigs", isINImods.ToString(), "Settings");
-            cfg.Write("ExeName", ExeName, "Settings");
+
         }
 
         private void ModCombo_SelectedIndexChanged(object sender, EventArgs e)
@@ -862,17 +804,8 @@ namespace EIStarter
 
             InitLang();
 
-            APIMode DataSource = APIMode.Win; // use Windows Registry
-
-            IniFile addonini = new("Engine/addon.ini");
-            REGedit addon = new(@"Software\Gipat.ru\EI_Starter");
-            RegIni ri2 = new(addon, addonini, DataSource);
-            string modFullPath = "";
-            if (isModsExists)
-                modFullPath = $@"{Directory.GetCurrentDirectory()}\{Path.GetDirectoryName(mod.path)}";
-            if (!StandalonePackage.Present(AppDomain.CurrentDomain.BaseDirectory))
-                ri2.SetStr("AddonPath", modFullPath, "settings");
-
+            string modFullPath = isModsExists ? Path.GetDirectoryName(Path.GetFullPath(mod.path)) : AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            RebuildLaunch.SelectMod(AppDomain.CurrentDomain.BaseDirectory, modFullPath);
             // Get addon.dll version
             try
             {

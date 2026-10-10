@@ -83,10 +83,10 @@ namespace EIStarter
         [DllImport("user32.dll")]
         public static extern bool EnumDisplayDevices(string lpDevice, uint iDevNum, ref DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
 
-        public Options() : this(SettingsProfile.Root) { }
-        internal Options(string registryRoot)
+        public Options() : this(SettingsProfile.FileName) { }
+        internal Options(string profileFile)
         {
-            profile = new SettingsProfile(registryRoot);
+            profile = new SettingsProfile(profileFile);
             InitializeComponent();
             LauncherTheme.PrepareBatched(this);
             cbbAdapter.Items.Add("Primary Videodriver");
@@ -116,16 +116,6 @@ namespace EIStarter
             profile.Plan.Clear();
             CollectPaths();
             initialPaths = new Dictionary<string, SettingsProfile.Value>(profile.Plan);
-            initialExeName = NTRtbExeName.Text;
-            if (StandalonePackage.Present(AppDomain.CurrentDomain.BaseDirectory))
-            {
-                string bundledBase = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Base");
-                NTRtbPathCD.Text = NTRtbPathGameWork.Text = bundledBase;
-                NTRtbPathRes.Text = Path.Combine(bundledBase, "Res");
-                NTRtbPathCD.ReadOnly = NTRtbPathGameWork.ReadOnly = NTRtbPathRes.ReadOnly = true;
-                NTRbtBrowse1.Enabled = NTRbtBrowse2.Enabled = NTRbtBrowse3.Enabled = btApplyPaths.Enabled = false;
-                NTRtbExeName.ReadOnly = true;
-            }
             profile.Plan.Clear();
         }
         public Dictionary<string, Resolution> rezolutions = new();
@@ -560,8 +550,8 @@ namespace EIStarter
             IniFile gameini = new IniFile("Engine/config/game.ini");
             IniFile addonini = new IniFile("Engine/addon.ini");
 
-            REGedit addon = new REGedit(@"Software\Gipat.ru\EI_Starter", profile: profile);
-            REGedit game = new REGedit(@"Software\Gipat.ru\EI_Starter\EvilIslands", profile: profile);
+            REGedit addon = new REGedit("", profile: profile);
+            REGedit game = new REGedit(@"EvilIslands", profile: profile);
 
             RegIni ri = new RegIni(game, gameini, DataSource);
             RegIni ri2 = new RegIni(addon, addonini, DataSource);
@@ -569,7 +559,7 @@ namespace EIStarter
             //ri.SetMode(DataSource);
             //ri2.SetMode(DataSource);
 
-            propGridCamera.SelectedObject = new PropertyCategories();
+            if (propGridCamera.SelectedObject == null) propGridCamera.SelectedObject = new PropertyCategories();
             PropertyCategories prop = (PropertyCategories)propGridCamera.SelectedObject;
 
             NTRtbExeName.Text = StarterForm.ExeName;
@@ -636,8 +626,8 @@ namespace EIStarter
             IniFile gameini = new("Engine/config/game.ini");
             IniFile addonini = new("Engine/addon.ini");
 
-            REGedit addon = new("Software\\Gipat.ru\\EI_Starter", profile: profile);
-            REGedit game = new("Software\\Gipat.ru\\EI_Starter\\EvilIslands", profile: profile);
+            REGedit addon = new("", profile: profile);
+            REGedit game = new("EvilIslands", profile: profile);
 
             RegIni ri = new(game, gameini, DataSource);
             RegIni ri2 = new(addon, addonini, DataSource);
@@ -657,8 +647,8 @@ namespace EIStarter
             IniFile gameini = new("Engine/config/game.ini");
             IniFile addonini = new("Engine/addon.ini");
 
-            REGedit addon = new("Software\\Gipat.ru\\EI_Starter", profile: profile);
-            REGedit game = new("Software\\Gipat.ru\\EI_Starter\\EvilIslands", profile: profile);
+            REGedit addon = new("", profile: profile);
+            REGedit game = new("EvilIslands", profile: profile);
 
             RegIni ri = new(game, gameini, DataSource);
             RegIni ri2 = new(addon, addonini, DataSource);

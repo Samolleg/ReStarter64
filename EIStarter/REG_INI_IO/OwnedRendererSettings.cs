@@ -7,7 +7,7 @@ using System.Text;
 
 namespace EIStarter
 {
-    // eid3d11.ini belongs to the new renderer. Keep the complete original byte
+    // rddraw.ini belongs to the new renderer. Keep the complete original byte
     // stream and edit only values the player selected in this dialog.
     internal sealed class OwnedRendererSettings
     {
@@ -25,8 +25,8 @@ namespace EIStarter
 
         internal OwnedRendererSettings(string engineDirectory)
         {
-            path = Path.Combine(engineDirectory, "eid3d11.ini");
-            rendererPath = Path.Combine(engineDirectory, "DDraw.dll");
+            path = Path.Combine(engineDirectory, "rddraw.ini");
+            rendererPath = Path.Combine(engineDirectory, "RDDraw.dll");
             try
             {
                 if (!File.Exists(rendererPath)) { Error = "Renderer DLL is missing."; return; }

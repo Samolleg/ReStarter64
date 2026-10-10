@@ -7,7 +7,7 @@
     <ProjectGuid>{2C9D40FC-7AFC-474F-A2BB-4EBF51DB418E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>EIStarter</RootNamespace>
-    <AssemblyName>EIStarter</AssemblyName>
+    <AssemblyName>ReStarter</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -52,14 +52,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(WineBuild)' == 'true' ">
-    <AssemblyName>EIStarter-Wine</AssemblyName>
-    <PlatformTarget>x86</PlatformTarget>
-    <OutputPath>bin\Wine\</OutputPath>
-    <IntermediateOutputPath>obj\Wine\</IntermediateOutputPath>
-    <DefineConstants>$(DefineConstants);WINE_COMPAT</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
+<PropertyGroup>
     <ApplicationIcon>Misc\favicon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
@@ -113,9 +106,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Misc\StandalonePackage.cs" />
-    <Compile Include="Misc\PortableProfile.cs" />
-    <Compile Include="Misc\WineCompatibility.cs" Condition=" '$(WineBuild)' == 'true' " />
+    <Compile Include="Misc\RebuildLaunch.cs" />
+    <Compile Include="Misc\FirstRunImport.cs" />
     <Compile Include="Misc\GuiHelper.cs" />
     <Compile Include="Misc\SimplyHelper.cs" />
     <Compile Include="Forms\MainForm.cs">
@@ -189,6 +181,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Misc\App.config" />
+    <EmbeddedResource Include="Misc\restarter-defaults.xml"><LogicalName>ReStarter.Defaults.xml</LogicalName></EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Misc\favicon.ico" />
