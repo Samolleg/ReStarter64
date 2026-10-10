@@ -1,0 +1,184 @@
+SelectMod|SELECT MOD|ВЫБЕРИТЕ МОД|MOD AUSWÄHLEN|CHOISIR UN MOD|WYBIERZ MOD|모드 선택|选择模组
+Play|PLAY  ›|ИГРАТЬ  ›|SPIELEN  ›|JOUER  ›|GRAJ  ›|플레이  ›|开始游戏  ›
+Settings|Settings|Настройки|Einstellungen|Paramètres|Ustawienia|설정|设置
+Information|Information|Информация|Informationen|Informations|Informacje|정보|信息
+Website|Website|Сайт|Webseite|Site web|Strona|웹사이트|网站
+AboutMod|About mod|О моде|Mod-Info|À propos|O modzie|모드 정보|模组信息
+More|More ···|Ещё ···|Mehr ···|Plus ···|Więcej ···|더 보기 ···|更多 ···
+Uninstall|Uninstall|Удаление|Deinstallieren|Désinstaller|Odinstaluj|제거|卸载
+Exit|Exit|Выход|Beenden|Quitter|Wyjdź|종료|退出
+DarkTheme|Dark theme|Тёмная тема|Dunkles Design|Thème sombre|Ciemny motyw|어두운 테마|深色主题
+LightTheme|Light theme|Светлая тема|Helles Design|Thème clair|Jasny motyw|밝은 테마|浅色主题
+NoMods|No mods found|Моды не найдены|Keine Mods gefunden|Aucun mod trouvé|Nie znaleziono modów|모드를 찾을 수 없습니다|未找到模组
+ModPicker|Select modification|Выбор модификации|Mod auswählen|Choisir un mod|Wybierz modyfikację|모드 선택|选择模组
+Search|Search|Поиск|Suchen|Rechercher|Szukaj|검색|搜索
+NoChoices|No choices available|Нет доступных вариантов|Keine Optionen verfügbar|Aucune option disponible|Brak dostępnych opcji|사용 가능한 항목이 없습니다|没有可用选项
+Close|Close|Закрыть|Schließen|Fermer|Zamknij|닫기|关闭
+On|On|Вкл|Ein|Activé|Wł.|켜짐|开启
+Off|Off|Выкл|Aus|Désactivé|Wył.|꺼짐|关闭
+EnterNumber|Enter a number|Введите число|Zahl eingeben|Saisissez un nombre|Wpisz liczbę|숫자를 입력하세요|请输入数字
+Options|Settings|Настройки|Einstellungen|Paramètres|Ustawienia|설정|设置
+tabGraphics|Graphics|Графика|Grafik|Graphismes|Grafika|그래픽|图形
+tabAddon|Addon|Аддон|Erweiterung|Extension|Dodatek|애드온|扩展
+tabMultiplayer|Multiplayer|Мультиплеер|Mehrspieler|Multijoueur|Gra sieciowa|멀티플레이|多人游戏
+tabCamera|Camera|Камера|Kamera|Caméra|Kamera|카메라|镜头
+tabPaths|Paths|Пути|Pfade|Chemins|Ścieżki|경로|路径
+tabUtils|Utilities|Утилиты|Werkzeuge|Utilitaires|Narzędzia|유틸리티|实用工具
+lbAdapter|Graphics device|Видеокарта|Grafikkarte|Carte graphique|Karta graficzna|그래픽 장치|显卡
+lbResolution|Resolution|Разрешение|Auflösung|Résolution|Rozdzielczość|해상도|分辨率
+cbFullscreen|Fullscreen|Полноэкранный режим|Vollbild|Plein écran|Pełny ekran|전체 화면|全屏
+cbMipMapping|Mipmapping|Мип-маппинг|Mipmapping|MIP mapping|Mipmapping|밉매핑|多级渐远纹理
+cbAntialiasing|Antialiasing|Сглаживание|Kantenglättung|Anticrénelage|Wygładzanie krawędzi|안티앨리어싱|抗锯齿
+cbDithering|Dithering|Дизеринг|Dithering|Tramage|Dithering|디더링|抖色
+cbFPSCursor|Frame-independent cursor|Курсор независимо от FPS|FPS-unabhängiger Cursor|Curseur indépendant des FPS|Kursor niezależny od FPS|프레임률 독립 커서|不受帧率影响的光标
+lbFiltering|Filtering|Фильтрация|Filterung|Filtrage|Filtrowanie|필터링|纹理过滤
+lbTexturesQ|Texture quality|Качество текстур|Texturqualität|Qualité des textures|Jakość tekstur|텍스처 품질|纹理质量
+lbShadowsQ|Shadow quality|Качество теней|Schattenqualität|Qualité des ombres|Jakość cieni|그림자 품질|阴影质量
+lbTerrainQ|Terrain quality|Качество ландшафта|Geländequalität|Qualité du terrain|Jakość terenu|지형 품질|地形质量
+lbLightingFreq|Lighting update rate|Частота обновления освещения|Lichtaktualisierung|Actualisation de l’éclairage|Odświeżanie oświetlenia|조명 갱신 빈도|光照更新频率
+lbShadowingFreq|Shadow update rate|Частота обновления теней|Schattenaktualisierung|Actualisation des ombres|Odświeżanie cieni|그림자 갱신 빈도|阴影更新频率
+lbMovies|Videos|Видеоролики|Videos|Vidéos|Filmy|동영상|过场视频
+lbAudio|Audio|Звук|Audio|Audio|Dźwięk|오디오|声音
+lbDrawRadiusObjects|Object draw distance|Дистанция отрисовки объектов|Objektsichtweite|Distance d’affichage des objets|Zasięg rysowania obiektów|오브젝트 표시 거리|物体绘制距离
+lbDrawRadiusTerrain|Terrain draw distance|Дистанция отрисовки ландшафта|Geländesichtweite|Distance d’affichage du terrain|Zasięg rysowania terenu|지형 표시 거리|地形绘制距离
+cbOnMinimizePause|Pause when minimized|Пауза при сворачивании|Pause beim Minimieren|Pause lorsque le jeu est réduit|Pauza po zminimalizowaniu|최소화 시 일시 정지|最小化时暂停
+cbMPConsoleSupport|Console support|Поддержка консоли|Konsolenunterstützung|Prise en charge de la console|Obsługa konsoli|콘솔 지원|控制台支持
+cbMPDisableMQ|Skip host quest files (.MQ)|Не загружать квесты (.MQ) хоста|Host-Questdateien (.MQ) überspringen|Ignorer les quêtes (.MQ) de l’hôte|Pomijaj pliki zadań (.MQ) hosta|호스트 퀘스트 파일(.MQ) 건너뛰기|跳过主机任务文件（.MQ）
+cbMPSecondSpeed|Second speed support|Поддержка второй скорости|Unterstützung der zweiten Geschwindigkeit|Prise en charge de la seconde vitesse|Obsługa drugiej prędkości|두 번째 속도 지원|支持第二档速度
+lbPathCD|CD path|Путь к CD|CD-Pfad|Chemin du CD|Ścieżka CD|CD 경로|光盘路径
+lbPathRes|Game resources path|Путь к ресурсам игры|Spielressourcenpfad|Chemin des ressources|Ścieżka zasobów gry|게임 리소스 경로|游戏资源路径
+lbPathGameWorkdir|Game working folder|Рабочая папка игры|Arbeitsordner des Spiels|Dossier de travail du jeu|Folder roboczy gry|게임 작업 폴더|游戏工作目录
+lbEXEName|Game executable|Исполняемый файл игры|Spieldatei|Exécutable du jeu|Plik wykonywalny gry|게임 실행 파일|游戏可执行文件
+btApplyPaths|Save paths|Сохранить пути|Pfade speichern|Enregistrer les chemins|Zapisz ścieżki|경로 저장|保存路径
+cbCharFixWinXP|Russian character fix for Windows XP|Исправление русских букв в Windows XP|Russische Zeichen unter Windows XP korrigieren|Corriger les caractères russes sous Windows XP|Popraw rosyjskie znaki w Windows XP|Windows XP 러시아어 문자 수정|修复 Windows XP 俄文字符
+btOk|OK|ОК|OK|OK|OK|확인|确定
+btCancel|Cancel|Отмена|Abbrechen|Annuler|Anuluj|취소|取消
+Normal|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+High|High|Высокое|Hoch|Élevée|Wysoka|높음|高
+Low|Low|Низкое|Niedrig|Faible|Niska|낮음|低
+Fast|Fast|Часто|Häufig|Fréquente|Często|자주|频繁
+Rare|Rare|Редко|Selten|Rare|Rzadko|드물게|较少
+Safe|Safe|Безопасный режим|Sicher|Mode sûr|Tryb bezpieczny|안전 모드|安全模式
+Fit|Fit|Вписать|Einpassen|Ajuster|Dopasuj|화면에 맞춤|适应屏幕
+Smooth|Soft|Мягкие|Weich|Douces|Miękkie|부드럽게|柔和
+Point|Nearest|Точечная|Nächster Nachbar|Au plus proche|Punktowe|최근접|最近邻
+Bilinear|Bilinear|Билинейная|Bilinear|Bilinéaire|Dwuliniowe|쌍선형|双线性
+Trilinear|Trilinear|Трилинейная|Trilinear|Trilinéaire|Trójliniowe|삼선형|三线性
+Flip X Axis|Invert X axis|Инверсия оси X|X-Achse umkehren|Inverser l’axe X|Odwróć oś X|X축 반전|反转 X 轴
+Flip Y Axis|Invert Y axis|Инверсия оси Y|Y-Achse umkehren|Inverser l’axe Y|Odwróć oś Y|Y축 반전|反转 Y 轴
+Clip Distance: Far|Far clip distance|Дальняя граница видимости|Ferne Sichtgrenze|Distance de visibilité maximale|Daleka granica widoczności|최대 가시 거리|最远可视距离
+Clip Distance: Near|Near clip distance|Ближняя граница видимости|Nahe Sichtgrenze|Distance de visibilité minimale|Bliska granica widoczności|최소 가시 거리|最近可视距离
+Terrain Sensetive|Terrain sensitivity|Чувствительность к рельефу|Geländeempfindlichkeit|Sensibilité au relief|Czułość na teren|지형 감도|地形灵敏度
+Border Scroll|Edge scrolling|Прокрутка у края экрана|Scrollen am Bildschirmrand|Défilement au bord de l’écran|Przewijanie przy krawędzi ekranu|화면 가장자리 스크롤|屏幕边缘滚动
+Frame Selection Sensetive|Selection frame sensitivity|Чувствительность рамки выделения|Empfindlichkeit des Auswahlrahmens|Sensibilité du cadre de sélection|Czułość ramki zaznaczenia|선택 영역 감도|选择框灵敏度
+Camera|Camera|Камера|Kamera|Caméra|Kamera|카메라|镜头
+Briefing Camera|Briefing camera|Камера брифинга|Briefing-Kamera|Caméra de briefing|Kamera odprawy|브리핑 카메라|简报镜头
+General|General|Общие|Allgemein|Général|Ogólne|일반|常规
+Height|Height|Высота|Höhe|Hauteur|Wysokość|높이|高度
+Distance To Carrier|Distance to target|Расстояние до цели|Abstand zum Ziel|Distance à la cible|Odległość od celu|대상까지 거리|目标距离
+Distance To Carrier Limit|Target distance limits|Пределы расстояния до цели|Abstandsgrenzen zum Ziel|Limites de distance à la cible|Zakres odległości od celu|대상 거리 제한|目标距离限制
+Pitch|Tilt|Наклон|Neigung|Inclinaison|Nachylenie|기울기|俯仰角
+Rotate|Rotation|Вращение|Drehung|Rotation|Obrót|회전|旋转
+Scroll|Scrolling|Прокрутка|Scrollen|Défilement|Przewijanie|스크롤|滚动
+Zoom|Zoom|Приближение|Zoom|Zoom|Przybliżenie|확대/축소|缩放
+Deploy X|X offset|Смещение по X|X-Versatz|Décalage X|Przesunięcie X|X 오프셋|X 偏移
+Deploy Y|Y offset|Смещение по Y|Y-Versatz|Décalage Y|Przesunięcie Y|Y 오프셋|Y 偏移
+Shortcuts|Camera presets|Позиции камеры|Kamerapositionen|Positions de caméra|Pozycje kamery|카메라 프리셋|镜头预设
+Shortcut|Preset|Позиция|Position|Position|Pozycja|프리셋|预设
+Distance|Distance|Расстояние|Abstand|Distance|Odległość|거리|距离
+AxisX|X axis|Ось X|X-Achse|Axe X|Oś X|X축|X 轴
+AxisY|Y axis|Ось Y|Y-Achse|Axe Y|Oś Y|Y축|Y 轴
+AxisZ|Z axis|Ось Z|Z-Achse|Axe Z|Oś Z|Z축|Z 轴
+Angle|Angle|Угол|Winkel|Angle|Kąt|각도|角度
+Speed|Speed|Скорость|Geschwindigkeit|Vitesse|Prędkość|속도|速度
+PowerMouse|Mouse sensitivity|Чувствительность мыши|Mausempfindlichkeit|Sensibilité de la souris|Czułość myszy|마우스 감도|鼠标灵敏度
+PowerKeyboard|Keyboard sensitivity|Чувствительность клавиатуры|Tastaturempfindlichkeit|Sensibilité du clavier|Czułość klawiatury|키보드 감도|键盘灵敏度
+Min|Minimum|Минимум|Minimum|Minimum|Minimum|최솟값|最小值
+Max|Maximum|Максимум|Maximum|Maximum|Maksimum|최댓값|最大值
+Default|Default|По умолчанию|Standard|Par défaut|Domyślne|기본값|默认值
+ModInfo|About modification|О модификации|Über die Mod|À propos du mod|O modyfikacji|모드 정보|模组信息
+btChangelog|Changelog|История изменений|Änderungen|Historique des modifications|Historia zmian|변경 내역|更新日志
+btReadme|Readme|Описание|Beschreibung|Description|Opis|설명|说明
+ModDesc|{0}<rn>Version: {1}<rn>Authors: {2}<rn>Date: {3}<rn><rn>Website: {4}<rn>Email: {5}<rn><rn>Single player: {6}<rn>Multiplayer: {7}|{0}<rn>Версия: {1}<rn>Авторы: {2}<rn>Дата: {3}<rn><rn>Сайт: {4}<rn>Почта: {5}<rn><rn>Одиночная игра: {6}<rn>Сетевая игра: {7}|{0}<rn>Version: {1}<rn>Autoren: {2}<rn>Datum: {3}<rn><rn>Webseite: {4}<rn>E-Mail: {5}<rn><rn>Einzelspieler: {6}<rn>Mehrspieler: {7}|{0}<rn>Version : {1}<rn>Auteurs : {2}<rn>Date : {3}<rn><rn>Site web : {4}<rn>E-mail : {5}<rn><rn>Solo : {6}<rn>Multijoueur : {7}|{0}<rn>Wersja: {1}<rn>Autorzy: {2}<rn>Data: {3}<rn><rn>Strona: {4}<rn>E-mail: {5}<rn><rn>Jeden gracz: {6}<rn>Gra sieciowa: {7}|{0}<rn>버전: {1}<rn>제작자: {2}<rn>날짜: {3}<rn><rn>웹사이트: {4}<rn>이메일: {5}<rn><rn>싱글플레이: {6}<rn>멀티플레이: {7}|{0}<rn>版本：{1}<rn>作者：{2}<rn>日期：{3}<rn><rn>网站：{4}<rn>邮箱：{5}<rn><rn>单人游戏：{6}<rn>多人游戏：{7}
+Yes|Yes|Да|Ja|Oui|Tak|예|是
+No|No|Нет|Nein|Non|Nie|아니요|否
+GameRunning|The game is already running.|Игра уже запущена.|Das Spiel läuft bereits.|Le jeu est déjà lancé.|Gra jest już uruchomiona.|게임이 이미 실행 중입니다.|游戏已在运行。
+Warning|Warning|Предупреждение|Warnung|Avertissement|Ostrzeżenie|경고|警告
+NotFound|File not found: {0}|Файл не найден: {0}|Datei nicht gefunden: {0}|Fichier introuvable : {0}|Nie znaleziono pliku: {0}|파일을 찾을 수 없습니다: {0}|找不到文件：{0}
+ConfirmUninstall|Uninstall EIStarter?|Удалить EIStarter?|EIStarter deinstallieren?|Désinstaller EIStarter ?|Odinstalować EIStarter?|EIStarter를 제거하시겠습니까?|是否卸载 EIStarter？
+BadModPath|Invalid mod path: {0}|Неверный путь мода: {0}|Ungültiger Mod-Pfad: {0}|Chemin du mod invalide : {0}|Nieprawidłowa ścieżka moda: {0}|잘못된 모드 경로: {0}|模组路径无效：{0}
+cbbShadowing__1|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+cbbTextures__2|Low|Низкое|Niedrig|Faible|Niska|낮음|低
+cbbShadowing__2|Rare|Редко|Selten|Rare|Rzadko|드물게|较少
+cbbShadowing__0|Fast|Часто|Häufig|Fréquente|Często|자주|频繁
+cbbShadows__2|Soft|Мягкие|Weich|Douces|Miękkie|부드럽게|柔和
+cbbShadows__1|Low|Низкое|Niedrig|Faible|Niska|낮음|低
+cbbTerrain__1|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+cbbTextures__0|High|Высокое|Hoch|Élevée|Wysoka|높음|高
+cbbMovies__0|Off|Выкл|Aus|Désactivé|Wył.|꺼짐|关闭
+cbbAudio__1|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+cbbShadows__0|Off|Выкл|Aus|Désactivé|Wył.|꺼짐|关闭
+cbbFiltering__2|Trilinear|Трилинейная|Trilinear|Trilinéaire|Trójliniowe|삼선형|三线性
+cbbLighting__2|Rare|Редко|Selten|Rare|Rzadko|드물게|较少
+cbbFiltering__0|Nearest|Точечная|Nächster Nachbar|Au plus proche|Punktowe|최근접|最近邻
+cbbTerrain__0|High|Высокое|Hoch|Élevée|Wysoka|높음|高
+cbbMovies__2|Fit|Вписать|Einpassen|Ajuster|Dopasuj|화면에 맞춤|适应屏幕
+cbbAudio__0|Off|Выкл|Aus|Désactivé|Wył.|꺼짐|关闭
+cbbLighting__0|Fast|Часто|Häufig|Fréquente|Często|자주|频繁
+cbbFiltering__1|Bilinear|Билинейная|Bilinear|Bilinéaire|Dwuliniowe|쌍선형|双线性
+cbbLighting__1|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+cbbTerrain__2|Low|Низкое|Niedrig|Faible|Niska|낮음|低
+cbbAudio__2|Safe|Безопасный режим|Sicher|Mode sûr|Tryb bezpieczny|안전 모드|安全模式
+cbbTextures__1|Normal|Обычное|Normal|Normal|Normalne|보통|普通
+Shortcut 0|Preset 0|Позиция 0|Position 0|Position 0|Pozycja 0|프리셋 0|预设 0
+Shortcut 1|Preset 1|Позиция 1|Position 1|Position 1|Pozycja 1|프리셋 1|预设 1
+Shortcut 2|Preset 2|Позиция 2|Position 2|Position 2|Pozycja 2|프리셋 2|预设 2
+Shortcut 3|Preset 3|Позиция 3|Position 3|Position 3|Pozycja 3|프리셋 3|预设 3
+btModFolder|Mod folder|Папка мода|Mod-Ordner|Dossier du mod|Folder moda|모드 폴더|模组文件夹
+Primary Videodriver|Primary video driver|Основной видеодрайвер|Primärer Grafiktreiber|Pilote graphique principal|Główny sterownik grafiki|기본 그래픽 드라이버|主显示驱动程序
+Version|Version|Версия|Version|Version|Wersja|버전|版本
+Authors|Authors|Авторы|Autoren|Auteurs|Autorzy|제작자|作者
+Date|Date|Дата|Datum|Date|Data|날짜|日期
+Contact|Contact|Контакты|Kontakt|Contact|Kontakt|연락처|联系方式
+SinglePlayer|Single player|Одиночная игра|Einzelspieler|Solo|Jeden gracz|싱글플레이|单人游戏
+Multiplayer|Multiplayer|Сетевая игра|Mehrspieler|Multijoueur|Gra sieciowa|멀티플레이|多人游戏
+Unspecified|Not set|Не задано|Nicht festgelegt|Non défini|Nie ustawiono|설정 안 됨|未设置
+GameManagedAdapter|Managed by the game and graphics module|Выбирается игрой и графическим модулем|Vom Spiel und Grafikmodul verwaltet|Géré par le jeu et le module graphique|Wybierana przez grę i moduł graficzny|게임 및 그래픽 모듈에서 관리|由游戏和图形模块管理
+GameSettingsDefaults|Unset values remain unchanged. Only your edits are saved.|Незаданные значения сохраняются как есть. Записываются только ваши изменения.|Nicht festgelegte Werte bleiben unverändert. Nur Ihre Änderungen werden gespeichert.|Les valeurs non définies restent inchangées. Seules vos modifications sont enregistrées.|Nieustawione wartości pozostają bez zmian. Zapisywane są tylko Twoje zmiany.|설정되지 않은 값은 유지됩니다. 변경한 값만 저장됩니다.|未设置的值保持不变，仅保存您的修改。
+SettingsChanged|Settings changed outside this window. Reopen it and try again.|Настройки изменились вне этого окна. Откройте его заново.|Die Einstellungen wurden außerhalb dieses Fensters geändert. Öffnen Sie es erneut.|Les paramètres ont été modifiés ailleurs. Rouvrez cette fenêtre.|Ustawienia zmieniono poza tym oknem. Otwórz je ponownie.|다른 곳에서 설정이 변경되었습니다. 창을 다시 여세요.|设置已在其他位置更改，请重新打开窗口。
+SettingsNotSaved|Settings were not saved.|Настройки не сохранены.|Die Einstellungen wurden nicht gespeichert.|Les paramètres n’ont pas été enregistrés.|Ustawienia nie zostały zapisane.|설정이 저장되지 않았습니다.|设置未保存。
+InvalidSettingsPath|Choose an existing folder.|Выберите существующую папку.|Wählen Sie einen vorhandenen Ordner.|Choisissez un dossier existant.|Wybierz istniejący folder.|기존 폴더를 선택하세요.|请选择现有文件夹。
+InvalidSettingsExe|Choose an executable that exists in the Engine folder.|Укажите исполняемый файл, существующий в папке Engine.|Wählen Sie eine ausführbare Datei im Ordner Engine.|Choisissez un exécutable présent dans le dossier Engine.|Wybierz plik wykonywalny znajdujący się w folderze Engine.|Engine 폴더에 있는 실행 파일을 선택하세요.|请选择 Engine 文件夹中存在的可执行文件。
+InvalidResolution|Choose a supported landscape resolution of at least 640×480.|Выберите поддерживаемое горизонтальное разрешение не меньше 640×480.|Wählen Sie eine unterstützte Auflösung im Querformat ab 640×480.|Choisissez une résolution paysage prise en charge d’au moins 640×480.|Wybierz obsługiwaną rozdzielczość poziomą co najmniej 640×480.|640×480 이상의 지원되는 가로 해상도를 선택하세요.|请选择至少为 640×480 的受支持横向分辨率。
+InvalidCameraRange|Check camera limits: near must be positive and below far; minimum ≤ default ≤ maximum. Set both limits.|Проверьте камеру: ближняя граница больше нуля и меньше дальней; минимум ≤ значение по умолчанию ≤ максимум. Укажите обе границы.|Prüfen Sie die Kameragrenzen: nah muss positiv und kleiner als fern sein; Minimum ≤ Standard ≤ Maximum. Geben Sie beide Grenzen an.|Vérifiez les limites de caméra : proche doit être positif et inférieur à loin ; minimum ≤ défaut ≤ maximum. Définissez les deux limites.|Sprawdź granice kamery: bliska dodatnia i mniejsza od dalekiej; minimum ≤ domyślna ≤ maksimum. Ustaw obie granice.|카메라 범위를 확인하세요. 근거리는 양수이며 원거리보다 작아야 하고 최소 ≤ 기본값 ≤ 최대여야 합니다. 양쪽 한계를 설정하세요.|请检查相机范围：近裁剪距离须大于零且小于远裁剪距离；最小值 ≤ 默认值 ≤ 最大值。请设置两侧边界。
+
+
+OwnedRendererHeading|New renderer (Direct3D 11)|Новый рендер (Direct3D 11)|Neuer Renderer (Direct3D 11)|Nouveau moteur de rendu (Direct3D 11)|Nowy renderer (Direct3D 11)|새 렌더러 (Direct3D 11)|新渲染器 (Direct3D 11)
+OwnedRendererF10Hint|Press F10 in the game to open the renderer settings and read detailed descriptions. Some changes need a game restart.|Нажмите F10 в игре, чтобы открыть настройки рендера и прочитать подробные пояснения. Некоторые изменения требуют перезапуска игры.|Drücken Sie F10 im Spiel für Renderereinstellungen und Beschreibungen. Manche Änderungen erfordern einen Neustart.|Appuyez sur F10 dans le jeu pour ouvrir les réglages du rendu et leurs descriptions. Certains changements exigent un redémarrage.|Naciśnij F10 w grze, aby otworzyć ustawienia renderera i opisy. Niektóre zmiany wymagają ponownego uruchomienia.|게임에서 F10을 누르면 렌더러 설정과 자세한 설명이 열립니다. 일부 변경 사항은 재시작 후 적용됩니다.|在游戏中按 F10 可打开渲染器设置及详细说明。部分更改需要重启游戏。
+OwnedRendererUnavailable|Renderer settings are unavailable in this Engine folder.|Настройки рендера недоступны в этой папке Engine.|Renderereinstellungen sind in diesem Engine-Ordner nicht verfügbar.|Les réglages du rendu sont indisponibles dans ce dossier Engine.|Ustawienia renderera są niedostępne w tym folderze Engine.|이 Engine 폴더에서는 렌더러 설정을 사용할 수 없습니다.|此 Engine 文件夹中无法使用渲染器设置。
+OwnedRendererPreset|Graphics preset|Пресет графики|Grafikprofil|Préréglage graphique|Profil graficzny|그래픽 프리셋|画质预设
+OwnedPresetAuto|Choose in game on first launch|Выбрать в игре при первом запуске|Beim ersten Start im Spiel wählen|Choisir dans le jeu au premier lancement|Wybierz w grze przy pierwszym uruchomieniu|첫 실행 시 게임에서 선택|首次启动时在游戏中选择
+OwnedPreset0|Low|Низкий|Niedrig|Faible|Niski|낮음|低
+OwnedPreset1|Medium|Средний|Mittel|Moyen|Średni|중간|中
+OwnedPreset2|High|Высокий|Hoch|Élevé|Wysoki|높음|高
+OwnedPreset3|Ultra|Ультра|Ultra|Ultra|Ultra|울트라|极高
+OwnedPreset4|Custom|Свой|Benutzerdefiniert|Personnalisé|Własny|사용자 지정|自定义
+OwnedPresetNote|A preset changes its graphics options only. Display mode, VSync, FPS cap and other personal choices remain as set.|Пресет меняет только входящие в него параметры графики. Режим окна, VSync, лимит FPS и другие личные настройки сохраняются.|Ein Profil ändert nur die zugehörigen Grafikoptionen. Fenstermodus, VSync, FPS-Limit und persönliche Einstellungen bleiben erhalten.|Le préréglage change seulement ses options graphiques. Mode fenêtre, VSync, limite FPS et préférences restent inchangés.|Profil zmienia tylko przypisane opcje grafiki. Tryb okna, VSync, limit FPS i inne ustawienia pozostają bez zmian.|프리셋은 포함된 그래픽 옵션만 변경합니다. 창 모드, VSync, FPS 제한 등은 유지됩니다.|预设仅更改其包含的画质选项。窗口模式、垂直同步、帧率上限等设置保持不变。
+OwnedFirstRunNote|On the first game start, the renderer may suggest a preset based on the video card. Saving an explicit choice here keeps your choice.|При первом запуске игры рендер может предложить пресет по видеокарте. Если сохранить свой выбор здесь, он останется выбранным.|Beim ersten Spielstart kann der Renderer ein Profil für die Grafikkarte vorschlagen. Eine hier gespeicherte Wahl bleibt erhalten.|Au premier lancement, le moteur peut proposer un préréglage selon la carte graphique. Un choix enregistré ici est conservé.|Przy pierwszym uruchomieniu renderer może zaproponować profil dla karty graficznej. Zapisany tu wybór zostanie zachowany.|게임을 처음 실행하면 그래픽 카드에 맞는 프리셋이 제안될 수 있습니다. 여기에서 저장한 선택은 유지됩니다.|首次启动游戏时，渲染器可能根据显卡推荐预设。在此保存的选择会保留。
+OwnedCategoryDisplay|Display and anti-aliasing|Экран и сглаживание|Anzeige und Kantenglättung|Affichage et anticrénelage|Ekran i wygładzanie|화면 및 앤티앨리어싱|显示与抗锯齿
+OwnedCategoryLighting|Lighting and shadows|Свет и тени|Licht und Schatten|Éclairage et ombres|Światło i cienie|조명 및 그림자|光照与阴影
+OwnedCategoryTerrain|Terrain|Рельеф|Gelände|Terrain|Teren|지형|地形
+OwnedCategoryWater|Water|Вода|Wasser|Eau|Woda|물|水面
+OwnedCategoryVegetation|Vegetation and ground cover|Растительность|Vegetation und Bodenbewuchs|Végétation|Roślinność|식생|植被
+OwnedCategoryAtmosphere|Atmosphere|Атмосфера|Atmosphäre|Atmosphère|Atmosfera|대기|大气
+OwnedCategoryEffects|Effects and particles|Эффекты и частицы|Effekte und Partikel|Effets et particules|Efekty i cząsteczki|효과 및 입자|特效与粒子
+OwnedCategoryWorld|World|Мир|Welt|Monde|Świat|월드|世界
+OwnedCategoryInterface|Interface and cursor|Интерфейс и курсор|Oberfläche und Cursor|Interface et curseur|Interfejs i kursor|인터페이스 및 커서|界面与光标
+OwnedKeepValue|Keep current value|Сохранить текущее значение|Aktuellen Wert beibehalten|Conserver la valeur actuelle|Zachowaj obecną wartość|현재 값 유지|保留当前值
+OwnedWindowAuto|0 means automatic size|0 — автоматический размер|0 bedeutet automatische Größe|0 signifie taille automatique|0 oznacza rozmiar automatyczny|0은 자동 크기|0 表示自动大小
+OwnedFrameUnlimited|0 means unlimited|0 — без ограничения|0 bedeutet unbegrenzt|0 signifie sans limite|0 oznacza bez limitu|0은 무제한|0 表示无限制
+OwnedWindowPair|Set both window width and height, or set both to 0 for automatic size.|Укажите и ширину, и высоту окна либо поставьте оба значения 0 для автоматического размера.|Breite und Höhe des Fensters angeben oder beide auf 0 setzen.|Indiquez la largeur et la hauteur, ou réglez les deux sur 0.|Ustaw szerokość i wysokość okna albo obie wartości na 0.|창 너비와 높이를 모두 지정하거나 둘 다 0으로 설정하세요.|请同时设置窗口宽度和高度，或都设为 0。
+OwnedRendererInvalid|Invalid renderer setting|Недопустимое значение рендера|Ungültige Renderereinstellung|Réglage de rendu invalide|Nieprawidłowa wartość renderera|잘못된 렌더러 설정|无效的渲染器设置
+OwnedRendererRollbackFailed|The renderer configuration could not be restored after a save failure. Reopen settings and check it.|После ошибки сохранения не удалось восстановить конфигурацию рендера. Откройте настройки заново и проверьте её.|Die Rendererkonfiguration konnte nach einem Speicherfehler nicht wiederhergestellt werden. Bitte prüfen.|La configuration du rendu n’a pas pu être restaurée après un échec. Rouvrez les réglages pour vérifier.|Nie udało się przywrócić konfiguracji renderera po błędzie zapisu. Otwórz ustawienia ponownie.|저장 실패 후 렌더러 구성을 복원할 수 없습니다. 설정을 다시 열어 확인하세요.|保存失败后无法恢复渲染器配置。请重新打开设置检查。
+GameSettingsHeading|Game settings|Настройки игры|Spieleinstellungen|Paramètres du jeu|Ustawienia gry|게임 설정|游戏设置
+GameEngineHint|Set startup resolution and sound here. Graphics and cursor options are in the renderer section below.|Здесь задаются разрешение запуска и звук. Графика и курсор настраиваются в разделе рендера ниже.|Hier werden Startauflösung und Ton eingestellt. Grafik und Mauszeiger werden unten im Renderer eingestellt.|Réglez ici la résolution de démarrage et le son. Les options graphiques et du curseur se trouvent dans le rendu ci-dessous.|Tutaj ustaw rozdzielczość uruchamiania i dźwięk. Grafikę i kursor ustawisz poniżej w sekcji renderera.|여기에서 시작 해상도와 사운드를 설정하세요. 그래픽과 커서 설정은 아래 렌더러 섹션에 있습니다.|在此设置启动分辨率和声音。图形与光标选项位于下方的渲染器部分。

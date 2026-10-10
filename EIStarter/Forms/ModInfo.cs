@@ -1,0 +1,168 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Resources;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace EIStarter
+{
+    public partial class ModInfo : Form
+    {
+        private string readmepath = "";
+        private string changelogpath = "";
+        private readonly string insertdataorig = "{0} \r\nVersion: {1} \r\nAuthor(s): {2} \r\nDate: {3} \r\n\r\nSite: {4} \r\nE-mail: {5} \r\n\r\nSingleplayer: {6} \r\nMultiplayer: {7} \r\n";
+        private string insertdata = "{0} \r\nVersion: {1} \r\nAuthor(s): {2} \r\nDate: {3} \r\n\r\nSite: {4} \r\nE-mail: {5} \r\n\r\nSingleplayer: {6} \r\nMultiplayer: {7} \r\n";
+        private StarterForm.Mod mod = new();
+        public ModInfo()
+        {
+            InitializeComponent();
+            Load -= ModInfo_Load;
+            StartPosition = FormStartPosition.CenterParent;
+            LauncherTheme.Prepare(this);
+        }
+        public void SetMod(StarterForm.Mod inputmod)
+        {
+            mod = inputmod;
+        }
+
+        private void ModInfo_Load(object sender, EventArgs e)
+        {
+            /*var tmp = $"{mod.name} \r\n" +
+            $"Version: {mod.ver} \r\n" +
+            $"Author(s): {mod.author} \r\n" +
+            $"Date: {mod.date} \r\n\r\n" +
+            $"Site: {mod.site} \r\n" +
+            $"E-mail: {mod.email} \r\n\r\n" +
+            $"Singleplayer: {mod.issingle} \r\n" +
+            $"Multiplayer: {mod.ismulti} \r\n";*/
+
+            NTRbtModAction.Visible = false;
+            btReadme.Visible = false;
+            btChangelog.Visible = false;
+
+            foreach (string dirfile in Directory.EnumerateFiles(Path.GetDirectoryName(mod.path)))
+            {
+                string low = Path.GetFileName(dirfile).ToLower();
+
+                if (low.Contains("read")//, StringComparison.CurrentCultureIgnoreCase)
+                    && low.Contains("me")//, StringComparison.CurrentCultureIgnoreCase)
+                    )
+                {
+                    readmepath = dirfile;
+                    btReadme.Visible = true;
+                }
+                if (low.Contains("change")//, StringComparison.CurrentCultureIgnoreCase)
+                    && low.Contains("log")//, StringComparison.CurrentCultureIgnoreCase)
+                    )
+                {
+                    changelogpath = dirfile;
+                    btChangelog.Visible = true;
+                }
+            }
+            //pluginpath
+            if (File.Exists(Path.GetDirectoryName(mod.path) + "\\" + mod.pluginpath))
+            {
+                NTRbtModAction.Visible = true;
+                NTRbtModAction.Text = mod.plugintext;
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string path = @$"{Directory.GetCurrentDirectory()}\{Path.GetDirectoryName(mod.path)}\{mod.pluginpath}";
+            Process.Start(@"C:\Windows\System32\cmd.exe", $"/C \"{path}\"");
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            SimplyHelper.OpenWithDefaultProgram(readmepath);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            SimplyHelper.OpenWithDefaultProgram(changelogpath);
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            SimplyHelper.OpenWithDefaultProgram(Path.GetDirectoryName(mod.path));
+        }
+
+        public void Localise(string lang, bool bCreate = false)
+        {
+            if (!bCreate)
+            {
+                UiText.Language = lang;
+                UiText.Apply(this);
+                NTRtbModInfo.Text = string.Format(UiText.Get("ModDesc"), mod.name, mod.ver, mod.author, mod.date, mod.site, mod.email,
+                    UiText.Get(mod.issingle ? "Yes" : "No"), UiText.Get(mod.ismulti ? "Yes" : "No"));
+                return;
+            }
+            NTRtbModInfo.Text = string.Format(insertdata, mod.name, mod.ver, mod.author, mod.date, mod.site, mod.email, mod.issingle, mod.ismulti);
+
+            if (!File.Exists($"lang/{lang}/lang.ini"))
+                return;
+
+            IniFile ini = new($"lang/{lang}/lang.ini");
+
+            List<Control> allControls = SimplyHelper.GetAllControls(this);
+
+            if (bCreate)
+            {
+                IniFile ini_save = new($"lang/{lang}/lang_create.ini");
+                ini_save.Write(this.Text, this.Text, this.Text);
+                ini_save.Write("ModDesc", insertdata.Replace("\r\n","<rn>"), this.Text);
+                foreach (Control control in allControls)
+                {
+                    if (string.IsNullOrEmpty(control.Name))
+                        continue;
+
+                    if (!string.IsNullOrEmpty(control.Text)
+                        && !control.Name.ToLower().StartsWith("cbb")
+                        && !control.Name.ToLower().StartsWith("nb")
+                        && !control.Name.ToLower().StartsWith("tb")
+                        && !control.Name.ToLower().StartsWith("ntr")
+                        )
+                        ini_save.Write(control.Name, control.Text, this.Text);
+                }
+            }
+            else
+            {
+                foreach (Control control in allControls)
+                {
+                    if (string.IsNullOrEmpty(control.Name))
+                        continue;
+                    if (
+                        !control.Name.ToLower().StartsWith("cbb") &&
+                        !control.Name.ToLower().StartsWith("nb") &&
+                        !control.Name.ToLower().StartsWith("tb") &&
+                        !control.Name.ToLower().StartsWith("ntr")
+                        )
+                        control.Text = ini.Read(control.Name, this.Text, control.Text);
+
+                    else if (!string.IsNullOrEmpty(control.Text)
+                        && control.Name.ToLower().StartsWith("tb")
+                        && !control.Name.ToLower().StartsWith("ntr")
+                        )
+                    {
+                        TextBox tb = (TextBox)control;
+                        for (int i = 0; i < tb.Lines.Count(); i++)
+                            tb.Lines[i] = ini.Read(control.Name + "_strN" + i, this.Text, tb.Lines[i]);
+                    }
+                }
+                insertdata = ini.Read("ModDesc", this.Text, insertdataorig).Replace("<rn>", "\r\n");
+                NTRtbModInfo.Text = string.Format(insertdata, mod.name, mod.ver, mod.author, mod.date, mod.site, mod.email, mod.issingle, mod.ismulti);
+
+                this.Text = ini.Read(this.Text, this.Text, this.Text);
+            }
+        }
+
+    }
+}
