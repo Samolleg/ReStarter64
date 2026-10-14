@@ -12,7 +12,7 @@ namespace EIStarter
         {
             root = Path.GetFullPath(root);
             string engine = Path.Combine(root, "Engine"), exe = Path.Combine(engine, "EIRebuild.exe");
-            foreach (string required in new[] { exe, Path.Combine(engine, "RDDraw.dll") })
+            foreach (string required in new[] { exe })
                 if (!File.Exists(required)) throw new FileNotFoundException("Для запуска EIRebuild нужен файл: " + required, required);
             string profile = Path.Combine(root, "restarter-settings.xml");
             SettingsProfile.Load(profile);

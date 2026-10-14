@@ -26,10 +26,10 @@ namespace EIStarter
         internal OwnedRendererSettings(string engineDirectory)
         {
             path = Path.Combine(engineDirectory, "rddraw.ini");
-            rendererPath = Path.Combine(engineDirectory, "RDDraw.dll");
+            rendererPath = Path.Combine(engineDirectory, "EIRebuild.exe");
             try
             {
-                if (!File.Exists(rendererPath)) { Error = "Renderer DLL is missing."; return; }
+                if (!File.Exists(rendererPath)) { Error = "EIRebuild executable is missing."; return; }
                 snapshot = File.Exists(path) ? File.ReadAllBytes(path) : null;
                 if (snapshot != null && (snapshot.Length > 1024 * 1024 || snapshot.Contains((byte)0)))
                 { Error = "Renderer configuration has an unsupported encoding or size."; return; }
