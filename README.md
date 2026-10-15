@@ -1,6 +1,6 @@
 # ReStarter
 
-Самостоятельный локальный стартер EIRebuild на основе Evilauncher `5572879`.
+Самостоятельный локальный стартер EIRebuild на C++ с сохранённой исходной C#-версией на основе Evilauncher `5572879`.
 Проект импортирован отдельным первым коммитом; прежний Evilauncher не меняется.
 Сохраняются оформление, локализация, выбор мода и форма настроек рендера.
 
@@ -29,14 +29,22 @@ XML использует исходные имена секций/опций и 
 предотвращает частичный XML, но не обеспечивает межпроцессную транзакцию.
 Совместимость с текущим EIRebuild предполагает реализацию RESTARTER-CONTRACT.
 
-Сборка: .NET Framework 4.7.2 и Visual Studio Build Tools, команда
+Нативная версия C++ без .NET: `powershell -NoProfile -ExecutionPolicy Bypass
+-File build-native.ps1 -OutputPath <папка>`. Результат — `ReStarter.exe` и
+`background.jpg`; дополнительные System.*.dll и `.exe.config` не нужны.
+Целевая ОС — Windows 7 SP1 и новее (проверка на самой ОС остаётся за владельцем).
+Оформление и функции native EIStarter перенесены с отдельным профилем ReStarter,
+настройками `rddraw.ini` и пресетом «Авто». Подробности: [native/README.md](native/README.md).
+
+Исходная C#-версия сохранена. Её сборка: .NET Framework 4.7.2 и Visual Studio Build Tools, команда
 `powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1`.
 Результат: `EIStarter/bin/Release/ReStarter.exe` и зависимости. Исходное имя
 каталога и namespace оставлены для ресурсных привязок импортированного UI.
 Проверки: [tests/README.md](tests/README.md).
 
-Для установки владельцем скопировать только ReStarter.exe, .config,
-зависимости и background.jpg рядом с EIStarter.exe. EIStarter.exe,
+Для установки нативной версии владельцем нужны только ReStarter.exe и
+background.jpg в корне игры. Для исходной C#-версии также нужны .config и
+её зависимости. EIStarter.exe,
 game.exe, ddraw.dll и прежние XML/INI оставляются на месте. EIRebuild/RDDraw
 устанавливаются отдельно владельцем из их проверенного комплекта.
 По первому запуску ReStarter создаст собственные файлы рядом с собой.
