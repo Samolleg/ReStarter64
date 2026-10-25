@@ -32,7 +32,7 @@ namespace EIStarter
             if (!string.Equals(Path.GetFileName(path), EngineName, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Expected " + EngineName + ": " + path);
 #if RESTARTER64
-            // rddraw.ini is next to the EXE. Do not share the x86 Engine directory.
+            // Keep the separate x64 engine layout; renderer settings live in Config64.
             if (string.Equals(Path.GetDirectoryName(path).TrimEnd('\\', '/'),
                 Path.Combine(Path.GetFullPath(root), "Engine"), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Use a separate directory for EIRebuild64 (default: Engine64).");
