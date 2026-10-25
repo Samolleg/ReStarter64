@@ -23,7 +23,7 @@ namespace EIStarter
         public string theme = "";
 
         public string design_dir = @"design\";
-        public const string ExeName = "EIRebuild.exe";
+        public const string ExeName = LauncherProfile.EngineName;
 
         public bool isusecustomskins = true;
 
@@ -80,7 +80,7 @@ namespace EIStarter
             EnumerateLangs();
 
 
-            IniFile cfg = new("restarter.config");
+            IniFile cfg = new(LauncherProfile.ConfigName);
 
             theme = cfg.Read("Theme", "Settings", "");
 
@@ -671,7 +671,7 @@ string currentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "ReStarter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, ex.Message, LauncherProfile.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 BtnS0(sender);
             }
         }
@@ -777,7 +777,7 @@ string currentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
 
         private void StarterForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            IniFile cfg = new("restarter.config");
+            IniFile cfg = new(LauncherProfile.ConfigName);
 
             if (cbbMod.SelectedIndex >= 0)
                 cfg.Write("ModSel", mods[cbbMod.SelectedIndex].path, "Settings");

@@ -64,7 +64,7 @@ namespace EIStarter
                 AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = new Padding(0, 18, 0, 8) });
             graphics.Controls.Add(new Label { Name = "ownedRendererF10Hint", Text = UiText.Get("OwnedRendererF10Hint"),
                 AutoSize = true, MaximumSize = new Size(720, 0), Margin = new Padding(0, 0, 0, 10) });
-            ownedRendererSettings = new OwnedRendererSettings(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Engine"));
+            ownedRendererSettings = new OwnedRendererSettings(Path.GetDirectoryName(LauncherProfile.Executable(AppDomain.CurrentDomain.BaseDirectory)));
             if (!ownedRendererSettings.Available)
             {
                 graphics.Controls.Add(new Label { Name = "ownedRendererUnavailable", AutoSize = true,

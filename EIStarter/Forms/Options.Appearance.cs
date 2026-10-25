@@ -112,7 +112,7 @@ namespace EIStarter
             inputErrors = new ErrorProvider { ContainerControl = this };
             Disposed += (sender, args) => inputErrors.Dispose();
             UiText.Apply(this);
-            Text = "ReStarter — " + UiText.Get("Settings");
+            Text = LauncherProfile.Name + " — " + UiText.Get("Settings");
             splitContainer1.Visible = false; // Keep the existing values and localisation model.
             FormBorderStyle = FormBorderStyle.Sizable;
             Font = new Font("Segoe UI", 11F);
@@ -170,7 +170,7 @@ namespace EIStarter
                 Setting(pages[3], field.Item1.Text, line);
             }
             NTRtbExeName.Font = Font;
-            Setting(pages[3], lbEXEName.Text, new Label { AutoSize = true, Text = @"Engine\EIRebuild.exe" });
+            Setting(pages[3], lbEXEName.Text, new Label { AutoSize = true, Text = LauncherProfile.Executable(AppDomain.CurrentDomain.BaseDirectory) });
             var savePaths = SelectionControls.Button(btApplyPaths.Text);
             savePaths.Click += btApplyPaths_Click;
             pages[3].Controls.Add(savePaths);

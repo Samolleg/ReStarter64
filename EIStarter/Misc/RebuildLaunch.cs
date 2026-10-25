@@ -11,16 +11,25 @@ namespace EIStarter
         internal static ProcessStartInfo Prepare(string root)
         {
             root = Path.GetFullPath(root);
-            string engine = Path.Combine(root, "Engine"), exe = Path.Combine(engine, "EIRebuild.exe");
+            string exe = LauncherProfile.Executable(root), engine = Path.GetDirectoryName(exe);
             foreach (string required in new[] { exe })
-                if (!File.Exists(required)) throw new FileNotFoundException("Для запуска EIRebuild нужен файл: " + required, required);
-            string profile = Path.Combine(root, "restarter-settings.xml");
+                if (!File.Exists(required)) throw new FileNotFoundException("Для запуска " + LauncherProfile.EngineName + " нужен файл: " + required, required);
+            string profile = Path.Combine(root, LauncherProfile.SettingsName);
             SettingsProfile.Load(profile);
-            return new ProcessStartInfo(exe) { WorkingDirectory = engine, UseShellExecute = false, Arguments = "-profile \"" + profile + "\"" };
+            string arguments = "-profile \"" + profile + "\"";
+#if RESTARTER64
+            var settings = new SettingsProfile(profile);
+            string selected = settings.Read("Settings", "AddonPath") as string;
+            if (string.IsNullOrWhiteSpace(selected)) throw new InvalidDataException("Выберите мод перед запуском.");
+            string mod = Path.GetFullPath(Path.Combine(root, selected)).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!File.Exists(Path.Combine(mod, "config.reg"))) throw new FileNotFoundException("В выбранном моде нет config.reg: " + mod);
+            arguments += " --mod \"" + mod + "\"";
+#endif
+            return new ProcessStartInfo(exe) { WorkingDirectory = engine, UseShellExecute = false, Arguments = arguments };
         }
         internal static void SelectMod(string root, string modFolder)
         {
-            var profile = new SettingsProfile(Path.Combine(root, "restarter-settings.xml"));
+            var profile = new SettingsProfile(Path.Combine(root, LauncherProfile.SettingsName));
             profile.Write("", "Path", Path.GetFullPath(root) + Path.DirectorySeparatorChar, RegistryValueKind.String);
             profile.Write("", "AddonPath", Path.Combine(modFolder, "addon.dll"), RegistryValueKind.String);
             profile.Write("Settings", "AddonPath", modFolder + Path.DirectorySeparatorChar, RegistryValueKind.String);

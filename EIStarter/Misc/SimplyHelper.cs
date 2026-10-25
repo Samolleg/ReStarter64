@@ -39,7 +39,7 @@ namespace EIStarter
 
         public static bool IsGameRuning()
         {
-            foreach (var process in Process.GetProcessesByName("EIRebuild"))
+            foreach (var process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(LauncherProfile.EngineName)))
                 using (process) if (!process.HasExited) return true;
             return false;
         }

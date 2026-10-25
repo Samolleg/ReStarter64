@@ -26,7 +26,7 @@ namespace EIStarter
         internal OwnedRendererSettings(string engineDirectory)
         {
             path = Path.Combine(engineDirectory, "rddraw.ini");
-            rendererPath = Path.Combine(engineDirectory, "EIRebuild.exe");
+            rendererPath = Path.Combine(engineDirectory, LauncherProfile.EngineName);
             try
             {
                 if (!File.Exists(rendererPath)) { Error = "EIRebuild executable is missing."; return; }

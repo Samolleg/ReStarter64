@@ -39,7 +39,7 @@ namespace EIStarter
             SuspendLayout();
             BackgroundImage = null;
             FormBorderStyle = FormBorderStyle.Sizable;
-            Text = "ReStarter";
+            Text = LauncherProfile.Name;
             MaximizeBox = true;
             Font = new Font("Segoe UI", 10F);
             Controls.Clear();
@@ -95,7 +95,7 @@ namespace EIStarter
             appearanceChoice.SelectedIndexChanged += (sender, args) =>
             {
                 LauncherTheme.Dark = appearanceChoice.SelectedIndex == 0;
-                new IniFile("restarter.config").Write("UiTheme", LauncherTheme.Dark ? "graphite" : "light", "Settings");
+                new IniFile(LauncherProfile.ConfigName).Write("UiTheme", LauncherTheme.Dark ? "graphite" : "light", "Settings");
                 LauncherTheme.Apply(this);
             };
             appearanceChoice.Visible = false;
