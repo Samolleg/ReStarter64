@@ -67,6 +67,9 @@ namespace EIStarter
 
         private void BuildOwnedRendererSettings(TableLayoutPanel graphics)
         {
+#if RESTARTER64
+            BuildOwnedRendererSettings64(graphics);
+#else
             graphics.Controls.Add(new Label { Name = "ownedRendererHeading", Text = UiText.Get("OwnedRendererHeading"),
                 AutoSize = true, Font = new Font(Font, FontStyle.Bold), Margin = new Padding(0, 18, 0, 8) });
             graphics.Controls.Add(new Label { Name = "ownedRendererF10Hint", Text = UiText.Get("OwnedRendererF10Hint"),
@@ -122,10 +125,14 @@ namespace EIStarter
                 graphics.Controls.Add(group);
             }
             ownedRendererPreset.SelectedIndexChanged += (sender, args) => ApplyOwnedPreset();
+#endif
         }
 
         private void AddOwnedOption(TableLayoutPanel fields, OwnedRendererOption option)
         {
+#if RESTARTER64
+            AddOwnedOption64(fields, option);
+#else
             string raw = ownedRendererSettings.GetRaw(option);
             Control editor;
             if (option.Type == OwnedValueType.Boolean || option.Choices != null)
@@ -151,22 +158,7 @@ namespace EIStarter
                 foreach (Control choice in picker.Controls) tip.SetToolTip(choice, OwnedOptionHint(option));
                 picker.Disposed += (sender, args) => tip.Dispose();
                 Setting(fields, option.Label, picker);
-#if RESTARTER64
-                if (option.Key == "upscaler")
-                {
-                    bool nvidia = NvidiaAdapter.IsPresent(out string reason);
-                    // Keep an existing DLSS selection even if unavailable here.
-                    // The engine's NGX capability check is authoritative.
-                    picker.Controls[1].Enabled = nvidia;
-                    tip.SetToolTip(picker.Controls[1], nvidia
-                        ? (UiText.Language == "ru" ? "Доступность DLSS проверит игра." : "The game checks DLSS support.") : reason);
-                    fields.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(720, 0),
-                        Text = nvidia
-                            ? (UiText.Language == "ru" ? "NVIDIA обнаружена. Поддержку DLSS проверит игра; автоматической замены режима нет."
-                                : "NVIDIA detected. The game checks DLSS support; the mode is never replaced automatically.")
-                            : reason, Margin = new Padding(0, 0, 0, 8) });
-                }
-#endif
+
                 combo.SelectedIndexChanged += (sender, args) => UpdateOwnedPreset();
             }
             else
@@ -181,11 +173,17 @@ namespace EIStarter
                 input.TextChanged += (sender, args) => UpdateOwnedPreset();
             }
             ownedRendererControls.Add(option.Key, editor);
+#endif
         }
 
         private string OwnedSelectedRaw(OwnedRendererOption option)
         {
+#if RESTARTER64
+            if (!ownedRendererControls.TryGetValue(option.Key, out Control control))
+                return ownedPending64.TryGetValue(option.Key, out string pending) ? pending : ownedRendererSettings.GetRaw(option);
+#else
             Control control = ownedRendererControls[option.Key];
+#endif
             if (control is TextBox input) return option.Type == OwnedValueType.Float &&
                 !string.Equals(input.Text, (string)input.Tag, StringComparison.Ordinal)
                 ? input.Text.Replace(',', '.') : input.Text;
@@ -198,17 +196,29 @@ namespace EIStarter
 
         private void SetOwnedValue(OwnedRendererOption option, decimal value)
         {
+#if RESTARTER64
+            if (!ownedRendererControls.TryGetValue(option.Key, out Control control))
+            { ownedPending64[option.Key] = OwnedRendererSettings.Format(option, value); return; }
+#else
             Control control = ownedRendererControls[option.Key];
+#endif
             if (control is TextBox input) input.Text = OwnedRendererSettings.Format(option, value);
             else ((ComboBox)control).SelectedIndex = (int)(value - option.Minimum);
         }
 
         private void RestoreOwnedInitialValues()
         {
+#if RESTARTER64
+            ownedPending64.Clear();
+#endif
             foreach (OwnedRendererOption option in OwnedRendererSchema.Options)
             {
                 string raw = ownedRendererSettings.GetRaw(option);
+#if RESTARTER64
+                if (!ownedRendererControls.TryGetValue(option.Key, out Control control)) continue;
+#else
                 Control control = ownedRendererControls[option.Key];
+#endif
                 if (control is TextBox input) { input.Text = raw; continue; }
                 var combo = (ComboBox)control;
                 int count = option.Type == OwnedValueType.Boolean ? 2 : option.Choices.Length;
@@ -227,6 +237,9 @@ namespace EIStarter
                 applyingOwnedPreset = true;
                 try { RestoreOwnedInitialValues(); ownedRendererSettings.ConfirmFirstRun = false; }
                 finally { applyingOwnedPreset = false; }
+#if RESTARTER64
+                RefreshOwnedAvailability64();
+#endif
                 return;
             }
             if (preset < 0 || preset >= 4) return;
@@ -263,6 +276,9 @@ namespace EIStarter
                 try { ownedRendererPreset.SelectedIndex = detected; }
                 finally { applyingOwnedPreset = false; }
             }
+#if RESTARTER64
+            RefreshOwnedAvailability64();
+#endif
         }
 
         private Dictionary<string, string> CollectOwnedEdits()
@@ -294,3 +310,4 @@ namespace EIStarter
         }
     }
 }
+

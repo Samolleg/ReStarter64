@@ -61,6 +61,9 @@ namespace EIStarter
         public StarterForm()
         {
             InitializeComponent();
+#if RESTARTER64
+            NvidiaAdapter.BeginDetection();
+#endif
             //grfx = this.CreateGraphics();
 #if DEBUG
             NTRlbDebug1.Visible = true;
@@ -689,12 +692,16 @@ string currentLanguage = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
         {
             BtnS1(sender);
 
+#if RESTARTER64
+            using (var information = new ReStarter64Information()) information.ShowDialog(this);
+#else
             string path = @$"lang\{lang}\readme.txt";
             string path_def = @"lang\en\readme.txt";
             if (File.Exists(path))
                 SimplyHelper.OpenWithDefaultProgram(path);
             else if (File.Exists(path_def))
                 SimplyHelper.OpenWithDefaultProgram(path_def);
+#endif
 
             BtnS0(sender);
         }

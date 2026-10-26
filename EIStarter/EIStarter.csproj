@@ -119,6 +119,9 @@
   <ItemGroup>
     <Compile Include="Misc\LauncherProfile.cs" />
     <Compile Include="Misc\NvidiaAdapter.cs" />
+    <Compile Include="Forms\ReStarter64Information.cs" />
+    <Compile Include="Forms\Options.Renderer64.cs" />
+    <Compile Include="REG_INI_IO\OwnedRendererSchema64.cs" />
     <Compile Include="Misc\RebuildLaunch.cs" />
     <Compile Include="Misc\FirstRunImport.cs" />
     <Compile Include="Misc\GuiHelper.cs" />
@@ -215,6 +218,11 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Release64' ">
+    <EmbeddedResource Include="Misc\ReStarter64\NVIDIA-DLSS-LICENSE.txt"><LogicalName>ReStarter64.NvidiaLicense</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="Misc\ReStarter64\THIRD_PARTY.md"><LogicalName>ReStarter64.ThirdParty</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="Misc\ReStarter64\Microsoft-MIT.txt"><LogicalName>ReStarter64.MicrosoftLicense</LogicalName></EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

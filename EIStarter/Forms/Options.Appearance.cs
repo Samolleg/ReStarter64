@@ -97,12 +97,18 @@ namespace EIStarter
         private void Setting(TableLayoutPanel page, string title, Control editor)
         {
             var row = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Size = Size.Empty, Dock = DockStyle.Top, ColumnCount = 2, Margin = new Padding(0, 0, 0, 6) };
+#if RESTARTER64
+            row.SuspendLayout();
+#endif
             row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
             row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 64));
             row.Controls.Add(new Label { Text = title, AutoSize = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0, 4, 16, 4) }, 0, 0);
             editor.Anchor = editor.Name.StartsWith("toggle_") ? AnchorStyles.Left : AnchorStyles.Left | AnchorStyles.Right;
             editor.Margin = Padding.Empty;
             row.Controls.Add(SelectionControls.InputSurface(editor), 1, 0);
+#if RESTARTER64
+            row.ResumeLayout(false);
+#endif
             page.Controls.Add(row);
         }
 
@@ -137,16 +143,22 @@ namespace EIStarter
                 pages.Add(SettingsPage(old.Text));
             }
             var graphics = pages[0];
+#if !RESTARTER64
             graphics.Controls.Add(new Label { Name = "gameSettingsHeading", AutoSize = true, Dock = DockStyle.Top, Text = UiText.Get("GameSettingsHeading"), Font = new Font(Font, FontStyle.Bold), Margin = new Padding(0, 18, 0, 8) });
             graphics.Controls.Add(new Label { AutoSize = true, Dock = DockStyle.Top, Text = UiText.Get("GameEngineHint"), Margin = new Padding(0, 0, 0, 12) });
             Setting(graphics, lbAdapter.Text, new Label { AutoSize = true, Text = UiText.Get("GameManagedAdapter") });
             graphics.Controls.Add(new Label { AutoSize = true, Dock = DockStyle.Top, Text = UiText.Get("GameSettingsDefaults"), Margin = new Padding(0, 0, 0, 12) });
             Setting(graphics, lbResolution.Text, SelectionControls.DropdownChoice(cbbResolutions, lbResolution.Text));
             Setting(graphics, lbAudio.Text, SelectionControls.InlineChoice(cbbAudio, lbAudio.Text));
+#endif
             BuildOwnedRendererSettings(graphics);
             foreach (var check in new[] { cbMPConsoleSupport, cbMPDisableMQ, cbMPSecondSpeed })
                 Setting(pages[1], check.Text, SelectionControls.Toggle(check));
+#if RESTARTER64
+            bool cameraBuilt = false;
+#else
             CameraFields(pages[2], propGridCamera.SelectedObject, "camera_");
+#endif
             var fields = new[] { (lbPathCD, NTRtbPathCD, NTRbtBrowse1), (lbPathRes, NTRtbPathRes, NTRbtBrowse2), (lbPathGameWorkdir, NTRtbPathGameWork, NTRbtBrowse3) };
             foreach (var field in fields)
             {
@@ -181,6 +193,16 @@ namespace EIStarter
                 button.Name = "section_" + i;
                 button.Click += (sender, args) =>
                 {
+#if RESTARTER64
+                    if (index == 2 && !cameraBuilt)
+                    {
+                        cameraBuilt = true;
+                        pages[2].SuspendLayout();
+                        CameraFields(pages[2], propGridCamera.SelectedObject, "camera_");
+                        LauncherTheme.ApplyBatched(pages[2]);
+                        pages[2].ResumeLayout(true);
+                    }
+#endif
                     content.SuspendLayout();
                     foreach (var viewport in viewports) viewport.Visible = false;
                     viewports[index].Visible = true;
