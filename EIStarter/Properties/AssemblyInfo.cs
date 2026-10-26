@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов для изменения сведений,
 // связанных со сборкой.
-[assembly: AssemblyTitle("ReStarter")]
-[assembly: AssemblyDescription("ReStarter for EIRebuild")]
+[assembly: AssemblyTitle(EIStarter.LauncherProfile.Name)]
+[assembly: AssemblyDescription(EIStarter.LauncherProfile.Description)]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("www.Gipat.Ru")]
-[assembly: AssemblyProduct("ReStarter for EIRebuild")]
+[assembly: AssemblyProduct(EIStarter.LauncherProfile.Description)]
 [assembly: AssemblyCopyright("Copyright Gipat.Ru ©  2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

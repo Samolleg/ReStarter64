@@ -8,8 +8,8 @@ namespace EIStarter
 {
     internal static class Program
     {
-        internal const string UniqueMutexName = "ReStarterSharp";
-        internal static string DataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReStarter");
+        internal const string UniqueMutexName = LauncherProfile.Name + "Sharp";
+        internal static string DataDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), LauncherProfile.Name);
         [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr window);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string className, string title);
         [STAThread]
@@ -21,9 +21,9 @@ namespace EIStarter
                 {
                     if (!createdNew)
                     {
-                        var window = FindWindow(null, "ReStarter");
+                        var window = FindWindow(null, LauncherProfile.Name);
                         if (window != IntPtr.Zero) SetForegroundWindow(window);
-                        else MessageBox.Show("ReStarter уже запущен.", "ReStarter");
+                        else MessageBox.Show(LauncherProfile.Name + " уже запущен.", LauncherProfile.Name);
                         return;
                     }
                     Application.EnableVisualStyles();
@@ -34,7 +34,7 @@ namespace EIStarter
                     Application.Run(new StarterForm());
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "ReStarter", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (Exception ex) { MessageBox.Show(ex.Message, LauncherProfile.Name, MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
     }
 }

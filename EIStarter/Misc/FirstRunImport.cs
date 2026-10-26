@@ -11,6 +11,7 @@ namespace EIStarter
     {
         // The sole legacy registry boundary. Always read-only, and invoked only
         // when the new durable profile is absent. Tests inject a denying reader.
+#if !RESTARTER64
         internal static XDocument ReadLegacyRegistry()
         {
             var xml = new XDocument(new XElement("profile", new XAttribute("version", "1")));
@@ -38,8 +39,21 @@ namespace EIStarter
             return xml;
         }
 
+#endif
         internal static void Ensure(string root, Func<XDocument> registryReader = null)
         {
+#if RESTARTER64
+            string settings = Path.Combine(root, LauncherProfile.SettingsName);
+            if (File.Exists(settings)) { SettingsProfile.Load(settings); return; }
+            string defaults = Path.Combine(root, LauncherProfile.DefaultsName);
+            if (!File.Exists(defaults))
+                using (var stream = typeof(FirstRunImport).Assembly.GetManifestResourceStream("ReStarter.Defaults.xml"))
+                    SettingsProfile.SaveAtomic(defaults, XDocument.Load(stream));
+            var config = new IniFile(Path.Combine(root, LauncherProfile.ConfigName));
+            if (!config.KeyExists("ExecutablePath", "Settings"))
+                config.Write("ExecutablePath", LauncherProfile.DefaultExecutable, "Settings");
+            SettingsProfile.SaveAtomic(settings, SettingsProfile.Load(defaults));
+#else
             string settings = Path.Combine(root, "restarter-settings.xml");
             if (File.Exists(settings)) { SettingsProfile.Load(settings); return; }
             string portable = Path.Combine(root, "portable-settings.xml");
@@ -67,6 +81,7 @@ namespace EIStarter
             if (!File.Exists(renderer) && File.Exists(oldRenderer)) File.Copy(oldRenderer, renderer);
             // Publish last: if import fails, a retry still sees the missing profile.
             SettingsProfile.SaveAtomic(settings, xml);
+#endif
         }
     }
 }

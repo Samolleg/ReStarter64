@@ -82,14 +82,14 @@ namespace EIStarter
             string cd = NTRtbPathCD.Text, resources = NTRtbPathRes.Text, work = NTRtbPathGameWork.Text;
             try
             {
-                profile = new SettingsProfile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "restarter-defaults.xml"));
+                profile = new SettingsProfile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LauncherProfile.DefaultsName));
                 unknownCameraBools.Clear();
                 cbbResolutions.SelectedIndex = -1;
                 initSettings();
                 PrepareUnspecifiedSettings();
                 CameraResetRequested?.Invoke();
             }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "ReStarter", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, LauncherProfile.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             finally
             {
                 profile = active;

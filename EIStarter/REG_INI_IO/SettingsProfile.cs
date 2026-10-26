@@ -12,7 +12,7 @@ namespace EIStarter
     internal sealed class SettingsProfile
     {
         internal const string Root = "";
-        internal static string FileName => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "restarter-settings.xml");
+        internal static string FileName => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LauncherProfile.SettingsName);
         internal sealed class Value
         {
             internal string Path, Name;
