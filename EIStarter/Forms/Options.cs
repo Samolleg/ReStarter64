@@ -91,6 +91,7 @@ namespace EIStarter
             LauncherTheme.PrepareBatched(this);
             cbbAdapter.Items.Add("Primary Videodriver");
 
+#if !RESTARTER64
             DEVMODE vDevMode = new DEVMODE();
             int i = 0;
             while (EnumDisplaySettings(null, i, ref vDevMode))
@@ -109,6 +110,7 @@ namespace EIStarter
             {
                 cbbResolutions.Items.Add(el);
             }
+#endif
             initSettings();
             PrepareUnspecifiedSettings();
             CollectSettings();
@@ -693,10 +695,12 @@ namespace EIStarter
             writemov(ri, prop.Scroll, "CameraDefaultScroll{0}");
             writemov(ri, prop.Zoom, "CameraDefaultZoom{0}");
 
+#if !RESTARTER64
             if (cbbAudio.SelectedIndex >= 0) ri.SetInt("audio", cbbAudio.SelectedIndex, "general settings");
 
 
             if (cbbResolutions.SelectedItem != null) ri.SetStr("videoresolution", cbbResolutions.SelectedItem.ToString(), "general settings");
+#endif
             
 
         }

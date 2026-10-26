@@ -1,44 +1,44 @@
-# ReStarter64 (X64P25)
+# ReStarter64
 
-Сборка общего проекта: powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Configuration Release64.
-Результат: EIStarter/bin/Release64/ReStarter64.exe и соседние зависимости.
-Профиль Release64 задаёт PlatformTarget=x64 и RESTARTER64; обычный Release остаётся прежним.
+Сборка: `powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Configuration Release64`.
+Результат: `EIStarter/bin/Release64/ReStarter64.exe`, его config и пять System.* DLL.
+`RESTARTER64` и PlatformTarget=x64 задаются только в Release64. x86-профиль и UI сохранены.
 
-Размещение: ReStarter64.exe с зависимостями в корне отдельного комплекта/игры,
-EIRebuild64.exe и его зависимости — в Engine64. Данные Base и MODS находятся в корне.
-Путь можно изменить в restarter64.config, секция [Settings]:
-ExecutablePath=Engine64\EIRebuild64.exe
+Размещение: ReStarter64 с зависимостями в корне игры, отдельный движок
+`Engine64/EIRebuild64.exe`. Путь можно изменить в `restarter64.config`,
+`[Settings] ExecutablePath=Engine64\EIRebuild64.exe`; имя EXE фиксировано,
+каталог Engine запрещён. Данные Base/MODS и пользовательский background.jpg общие,
+в комплект обновления стартера они не входят.
 
-Относительный путь разрешается от папки ReStarter64. Имя EXE должно оставаться
-EIRebuild64.exe; каталог Engine этого корня запрещён, чтобы не писать x86 rddraw.ini.
-Не размещайте x64 EXE рядом с x86 EXE в другом общем каталоге: рендер использует
-rddraw.ini и rddraw_profiles рядом с EXE.
+Настройки: `restarter64.config`, `restarter64-settings.xml`,
+`restarter64-defaults.xml`; новый профиль создаётся из встроенных defaults,
+без импорта x86 и без обращения к реестру. Запуск передаёт собственный
+`-profile` и `--mod`. Сохранения и журналы принадлежат EIRebuild64.
 
-Файлы стартера: restarter64.config, restarter64-settings.xml, restarter64-defaults.xml.
-Первый запуск создаёт профиль из встроенных defaults, без импорта x86/EIStarter
-и без доступа к реестру. XML kind сохраняет прежний формат, но не означает работу
-с реестром. Сброс настроек читает только restarter64-defaults.xml.
-Mutex и LocalAppData-каталог также отдельные: ReStarter64Sharp и ReStarter64.
-Общие ресурсы оформления, языки, Base и описания модов остаются читаемыми.
+Параметры рендера читаются из `Config64/rddraw.ini`.
+Схема X64RS01 соответствует F10 EIRebuild64 `fb5a071`:
+`graphics_settings.cpp`, `renderer_device.cpp`, `renderer_ui_ru.h`,
+`critter_summary.h`, `combat_ui.cpp` и редактор HUD в `debug_overlay.cpp`.
+Старые bootstrap-разрешение и режим аудиодрайвера скрыты; их XML-значения не записываются.
+Режим окна и размер задаёт рендер. Камера, пути и прочие прежние разделы сохранены.
 
-Запуск: выбранный EXE, рабочий каталог — его папка, аргументы:
--profile "<корень>\restarter64-settings.xml" --mod "<абсолютная папка мода>".
-Профиль должен существовать и успешно читаться; мод должен содержать config.reg.
-Выбранный мод также записывается в Settings/AddonPath профиля.
-Имя addon.dll в корневом значении AddonPath — только формат пути: DLL не запускается.
-Настройки графики редактируют rddraw.ini рядом с выбранным EIRebuild64.exe.
+F10 применяет активный `Config64/rddraw_profiles/<имя>.ini` поверх главного INI.
+Стартер читает его значения групп Interface/HUD layout и сохраняет изменения
+в оба файла с прежними byte guards и rollback при ошибке сохранения XML.
+Неизвестные ключи, байты, отступы, окончания строк и невыбранные значения сохраняются.
+Управление профилями, перетаскивание панелей, текущая память и каталог эффектов
+остаются действиями F10; статические параметры HUD и списки ID доступны в стартере.
 
-## Ограничение текущего EIRebuild64
+DXGI запускается один раз в фоновом потоке при создании главного окна.
+До результата DLSS неактивен; отсутствие NVIDIA и ошибка DXGI оставляют его
+неактивным, сохраняя ранее выбранное значение. Возможности NGX проверяет игра.
+Закрытые группы рендера и камера строятся только при открытии.
 
-На базе 1dbe772 P24: Saves64 реализован, но Config64/Logs64 ещё не реализованы
-полностью. Журнал идёт в Engine64/Logs; GameMain пишет Base/config/settings.ini.
-Без -profile движок всё ещё выбирает x86 restarter-settings.xml, а при отсутствующем
-профиле может читать x86 defaults. Стартер передаёт существующий собственный профиль,
-но сам по себе не исправляет общую запись GameMain.
-До отдельного исправления путей движка не запускать этот комплект рядом с рабочим x86.
-Исходники EIRebuild64 в P25 не меняются.
+«Информация» встроена в EXE: сведения о ReStarter64/EIRebuild64, текстовая
+атрибуция NVIDIA, полный NVIDIA-DLSS-LICENSE.txt, THIRD_PARTY.md и Microsoft MIT.
+Обращения к прежнему `lang/<язык>/readme.txt` в ReStarter64 нет.
+Логотипы и изображения NVIDIA Marks не добавляются.
 
-После исправления движка владелец проверяет первый запуск, выбор мода, сохранение
-и сброс опций, изменение ExecutablePath, F10 и повторное открытие графических опций,
-новую игру/save/load с Saves64 и неизменность файлов x86. Тесты и приложения при
-подготовке P25 не запускаются.
+X64RS01: одна обычная Release64-сборка; без тестов, стендов, headless,
+запуска стартера/игры и установки. Владельцу остаются визуальная приёмка,
+скорость открытия и сохранение/повторное открытие параметров с проверкой F10.

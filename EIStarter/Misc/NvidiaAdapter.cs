@@ -1,6 +1,7 @@
 #if RESTARTER64
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace EIStarter
 {
@@ -41,10 +42,15 @@ namespace EIStarter
             public int LuidHigh;
         }
 
-        internal static bool IsPresent(out string reason)
+        internal enum Detection { Present, Absent, Failed }
+        // Driver inventory runs once per launcher process, away from the UI thread.
+        private static readonly Lazy<Task<Detection>> Inventory =
+            new Lazy<Task<Detection>>(() => Task.Run(() => Detect()));
+        internal static Task<Detection> Result => Inventory.Value;
+        internal static void BeginDetection() { _ = Result; }
+
+        private static Detection Detect()
         {
-            reason = UiText.Language == "ru" ? "DLSS недоступен: адаптер NVIDIA не обнаружен."
-                : "DLSS unavailable: no NVIDIA adapter detected.";
             Factory factory = null;
             try
             {
@@ -53,22 +59,18 @@ namespace EIStarter
                 for (uint index = 0; ; index++)
                 {
                     int result = factory.EnumAdapters(index, out Adapter adapter);
-                    if (result == unchecked((int)0x887A0002)) return false; // DXGI_ERROR_NOT_FOUND
+                    if (result == unchecked((int)0x887A0002)) return Detection.Absent;
                     Marshal.ThrowExceptionForHR(result);
                     try
                     {
                         Marshal.ThrowExceptionForHR(adapter.GetDesc(out AdapterDescription description));
-                        if (description.VendorId == 0x10DE) { reason = ""; return true; }
+                        if (description.VendorId == 0x10DE) return Detection.Present;
                     }
                     finally { if (adapter != null) Marshal.ReleaseComObject(adapter); }
                 }
             }
             catch (Exception ex) when (ex is COMException || ex is DllNotFoundException || ex is EntryPointNotFoundException)
-            {
-                reason = UiText.Language == "ru" ? "DLSS недоступен: не удалось получить список адаптеров DXGI."
-                    : "DLSS unavailable: DXGI adapter enumeration failed.";
-                return false;
-            }
+            { return Detection.Failed; }
             finally { if (factory != null) Marshal.ReleaseComObject(factory); }
         }
     }

@@ -6,7 +6,11 @@ using System.Linq;
 
 namespace EIStarter
 {
-    internal enum OwnedValueType { Boolean, Integer, Float }
+    internal enum OwnedValueType { Boolean, Integer, Float
+#if RESTARTER64
+        , Text
+#endif
+    }
 
     internal sealed class OwnedRendererOption
     {
@@ -16,6 +20,15 @@ namespace EIStarter
         internal readonly decimal Default, Minimum, Maximum, Step;
         internal readonly decimal[] Presets;
         internal readonly string[] Choices;
+#if RESTARTER64
+        internal readonly string[] RussianChoices;
+        internal readonly string TextDefault;
+        internal OwnedRendererOption(string key, int category, OwnedValueType type, decimal initial,
+            decimal minimum, decimal maximum, decimal step, decimal[] presets, string[] choices,
+            string english, string russian, string[] russianChoices, string textDefault)
+            : this(key, category, type, initial, minimum, maximum, step, presets, choices, english, russian)
+        { RussianChoices = russianChoices; TextDefault = textDefault; }
+#endif
         internal bool InPreset => Presets != null;
         internal string Label => UiText.Language == "ru" ? Russian : English;
         internal OwnedRendererOption(string key, int category, OwnedValueType type, decimal initial,
@@ -28,11 +41,15 @@ namespace EIStarter
     internal static class OwnedRendererSchema
     {
 #if RESTARTER64
-        internal const int PlayerSettingCount = 51;
+        internal static readonly int PlayerSettingCount = OwnedRendererSchema64.Options.Length;
 #else
         internal const int PlayerSettingCount = 49;
 #endif
-        internal static readonly OwnedRendererOption[] Options = {
+        internal static readonly OwnedRendererOption[] Options =
+#if RESTARTER64
+            OwnedRendererSchema64.Options;
+#else
+        new OwnedRendererOption[] {
 #if RESTARTER64
             // Renderer settings_version 3: dlss_frame.h and register_config_options.
             new OwnedRendererOption("upscaler", 0, OwnedValueType.Integer, 0m, 0m, 2m, 1m, null, new string[] { "Off", "DLSS", "FSR" }, "Upscaling", "Масштабирование"),
@@ -89,6 +106,7 @@ namespace EIStarter
             new OwnedRendererOption("highlight_hover_characters", 8, OwnedValueType.Boolean, 1m, 0m, 1m, 1m, null, null, "Highlight characters under the cursor", "Подсветка персонажей под курсором"),
             new OwnedRendererOption("highlight_hover_objects", 8, OwnedValueType.Boolean, 1m, 0m, 1m, 1m, null, null, "Highlight objects under the cursor", "Подсветка предметов под курсором"),
         };
+#endif
         internal static readonly Dictionary<string, OwnedRendererOption> ByKey =
             Options.ToDictionary(option => option.Key, StringComparer.OrdinalIgnoreCase);
     }

@@ -23,10 +23,19 @@ namespace EIStarter
         internal bool FirstRunDone { get; private set; }
         internal bool ConfirmFirstRun { get; set; }
 
+#if RESTARTER64
+        private readonly bool interfaceOnly64;
+        private OwnedRendererSettings interfaceProfile64;
+        private string interfaceName64 = "default";
+        internal string InterfaceName64 => interfaceName64;
+        internal OwnedRendererSettings(string engineDirectory, string interfacePath = null)
+#else
         internal OwnedRendererSettings(string engineDirectory)
+#endif
         {
 #if RESTARTER64
-            path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config64", "rddraw.ini");
+            interfaceOnly64 = interfacePath != null;
+            path = interfacePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config64", "rddraw.ini");
 #else
             path = Path.Combine(engineDirectory, "rddraw.ini");
 #endif
@@ -43,6 +52,22 @@ namespace EIStarter
                 text = snapshot == null ? "" : ByteEncoding.GetString(snapshot);
                 newline = text.Contains("\r\n") ? "\r\n" : text.Contains("\n") ? "\n" : text.Contains("\r") ? "\r" : "\r\n";
                 if (!Parse()) { Error = "Renderer configuration has duplicate sections or keys."; return; }
+#if RESTARTER64
+                if (!interfaceOnly64)
+                {
+                    // F10 applies this file over the main INI at startup.
+                    string name = interfaceName64;
+                    if (Encoding.UTF8.GetByteCount(name) == 0 || Encoding.UTF8.GetByteCount(name) > 48 ||
+                        name[0] == '.' || name[0] == ' ' || name[name.Length - 1] == ' ' ||
+                        name.Any(c => c < 32 || "\\/:*?\"<>|".IndexOf(c) >= 0)) name = "default";
+                    interfaceName64 = name;
+                    interfaceProfile64 = new OwnedRendererSettings(engineDirectory,
+                        Path.Combine(Path.GetDirectoryName(path), "rddraw_profiles", name + ".ini"));
+                    if (!interfaceProfile64.Available) { Error = interfaceProfile64.Error; return; }
+                    foreach (var pair in interfaceProfile64.values)
+                        if (IsInterfaceKey64(pair.Key)) values[pair.Key] = pair.Value;
+                }
+#endif
                 Available = true;
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is System.Security.SecurityException)
@@ -114,13 +139,24 @@ namespace EIStarter
                     continue;
                 }
                 if (!Entry(line.Content, out string key, out string value, out _, out _)) continue;
-                if (section.Equals("graphics", StringComparison.OrdinalIgnoreCase) && OwnedRendererSchema.ByKey.ContainsKey(key))
+                if (
+#if RESTARTER64
+                    (interfaceOnly64 ? IsInterfaceKey64(key) :
+#endif
+                    section.Equals("graphics", StringComparison.OrdinalIgnoreCase)
+#if RESTARTER64
+                    )
+#endif
+                    && OwnedRendererSchema.ByKey.ContainsKey(key))
                 {
                     if (values.ContainsKey(key)) return false;
                     values[key] = value;
                 }
 #if RESTARTER64
-                else if (section.Equals("graphics", StringComparison.OrdinalIgnoreCase) &&
+                else if (!interfaceOnly64 && section.Equals("graphics", StringComparison.OrdinalIgnoreCase) &&
+                         key.Equals("interface_profile", StringComparison.OrdinalIgnoreCase))
+                    interfaceName64 = Encoding.UTF8.GetString(ByteEncoding.GetBytes(value));
+                else if (!interfaceOnly64 && section.Equals("graphics", StringComparison.OrdinalIgnoreCase) &&
                          key.Equals("dlss_mode", StringComparison.OrdinalIgnoreCase))
                     int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out legacyUpscaler);
 #endif
@@ -147,6 +183,9 @@ namespace EIStarter
         internal string GetRaw(OwnedRendererOption option)
         {
             if (values.TryGetValue(option.Key, out string raw)) return raw;
+#if RESTARTER64
+            if (option.Type == OwnedValueType.Text) return option.TextDefault ?? "";
+#endif
             return Format(option, option.Default);
         }
 
@@ -160,6 +199,10 @@ namespace EIStarter
         {
             value = 0;
             if (raw == null) return false;
+#if RESTARTER64
+            if (option.Type == OwnedValueType.Text)
+                return raw.Length <= 1023 && !raw.Any(c => c == '\r' || c == '\n' || c == '\0' || c > 255);
+#endif
             raw = raw.Trim();
             if (option.Type == OwnedValueType.Boolean)
             {
@@ -229,6 +272,37 @@ namespace EIStarter
 
         internal void Commit(IDictionary<string, string> selected, Action saveOtherSettings)
         {
+#if RESTARTER64
+            if (interfaceProfile64 != null)
+            {
+                var interfaceEdits = selected.Where(pair => IsInterfaceKey64(pair.Key))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+                // Existing byte guards and rollback cover both INIs and the XML save.
+                interfaceProfile64.Commit(interfaceEdits, () => CommitLocal64(selected, saveOtherSettings));
+                return;
+            }
+            CommitLocal64(selected, saveOtherSettings);
+        }
+
+        private static bool IsInterfaceKey64(string key)
+        {
+            return OwnedRendererSchema.ByKey.TryGetValue(key, out OwnedRendererOption option) &&
+                (option.Category == 11 || (option.Category == 8 &&
+                    key != "confine_cursor" && !key.StartsWith("highlight_", StringComparison.Ordinal)));
+        }
+
+        private string ChangeInterface64(string source, string key, string value)
+        {
+            foreach (Line line in Lines(source))
+                if (Entry(line.Content, out string found, out _, out int start, out int length) &&
+                    found.Equals(key, StringComparison.OrdinalIgnoreCase))
+                    return source.Remove(line.Start + start, length).Insert(line.Start + start, value);
+            return Change(source, "interface", key, value, newline);
+        }
+
+        private void CommitLocal64(IDictionary<string, string> selected, Action saveOtherSettings)
+        {
+#endif
             if (selected == null) throw new ArgumentNullException(nameof(selected));
             if (saveOtherSettings == null) throw new ArgumentNullException(nameof(saveOtherSettings));
             var edits = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -238,6 +312,13 @@ namespace EIStarter
                     !TryParse(option, pair.Value, out decimal chosen))
                     throw new InvalidOperationException(UiText.Get("OwnedRendererInvalid") + ": " + pair.Key);
                 string before = GetRaw(option);
+#if RESTARTER64
+                if (option.Type == OwnedValueType.Text)
+                {
+                    if (!string.Equals(before, pair.Value, StringComparison.Ordinal)) edits[pair.Key] = pair.Value;
+                    continue;
+                }
+#endif
                 if (TryParse(option, before, out decimal previous) && Math.Abs(previous - chosen) < .0001m) continue;
                 edits[pair.Key] = Format(option, chosen);
             }
@@ -246,7 +327,11 @@ namespace EIStarter
             if (edits.Count == 0 && (!ConfirmFirstRun || FirstRunDone)) { saveOtherSettings(); return; }
             if (!Available || !File.Exists(rendererPath)) throw new InvalidOperationException(UiText.Get("OwnedRendererUnavailable"));
             string nextText = text;
-            foreach (var pair in edits) nextText = Change(nextText, "graphics", pair.Key, pair.Value, newline);
+            foreach (var pair in edits) nextText =
+#if RESTARTER64
+                interfaceOnly64 ? ChangeInterface64(nextText, pair.Key, pair.Value) :
+#endif
+                Change(nextText, "graphics", pair.Key, pair.Value, newline);
             if (finishFirstRun) nextText = Change(nextText, "setup", "first_run_done", "true", newline);
             byte[] next = ByteEncoding.GetBytes(nextText);
 
