@@ -43,9 +43,6 @@ namespace EIStarter
             try
             {
                 if (!File.Exists(rendererPath)) { Error = "EIRebuild executable is missing."; return; }
-#if RESTARTER64
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-#endif
                 snapshot = File.Exists(path) ? File.ReadAllBytes(path) : null;
                 if (snapshot != null && (snapshot.Length > 1024 * 1024 || snapshot.Contains((byte)0)))
                 { Error = "Renderer configuration has an unsupported encoding or size."; return; }
@@ -64,6 +61,19 @@ namespace EIStarter
                     interfaceProfile64 = new OwnedRendererSettings(engineDirectory,
                         Path.Combine(Path.GetDirectoryName(path), "rddraw_profiles", name + ".ini"));
                     if (!interfaceProfile64.Available) { Error = interfaceProfile64.Error; return; }
+                    if (interfaceProfile64.snapshot == null)
+                    {
+                        // F10 creates missing profiles from all current interface values.
+                        // Prepare the same contents in memory; only Apply may create the file.
+                        var profileText = new StringBuilder("; EID3D11 interface profile (HUD layout).\r\n[interface]\r\n");
+                        foreach (OwnedRendererOption option in OwnedRendererSchema.Options.Where(item => IsInterfaceKey64(item.Key)))
+                        {
+                            string raw = GetRaw(option);
+                            interfaceProfile64.values[option.Key] = raw;
+                            profileText.Append(option.Key).Append('=').Append(raw).Append("\r\n");
+                        }
+                        interfaceProfile64.text = profileText.ToString();
+                    }
                     foreach (var pair in interfaceProfile64.values)
                         if (IsInterfaceKey64(pair.Key)) values[pair.Key] = pair.Value;
                 }
@@ -337,6 +347,9 @@ namespace EIStarter
 
             if (snapshot == null)
             {
+#if RESTARTER64
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+#endif
                 using (var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     try
