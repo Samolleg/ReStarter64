@@ -118,6 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Misc\LauncherProfile.cs" />
+    <Compile Include="Misc\NvidiaAdapter.cs" />
     <Compile Include="Misc\RebuildLaunch.cs" />
     <Compile Include="Misc\FirstRunImport.cs" />
     <Compile Include="Misc\GuiHelper.cs" />
