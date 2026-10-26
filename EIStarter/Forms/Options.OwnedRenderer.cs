@@ -29,6 +29,13 @@ namespace EIStarter
             {
                 case "Borderless fullscreen": return "Без рамки на весь экран";
                 case "Windowed": return "В окне";
+#if RESTARTER64
+                case "Quality": return "Качество";
+                case "Balanced": return "Баланс";
+                case "Performance": return "Производительность";
+                case "Ultra Performance": return "Ультрапроизводительность";
+                case "DLAA / FSR Native AA": return "DLAA / FSR: полное разрешение";
+#endif
                 case "Original": return "Оригинальное";
                 case "Faithful": return "Как в оригинале";
                 case "Atmospheric": return "Атмосферный";
@@ -144,6 +151,22 @@ namespace EIStarter
                 foreach (Control choice in picker.Controls) tip.SetToolTip(choice, OwnedOptionHint(option));
                 picker.Disposed += (sender, args) => tip.Dispose();
                 Setting(fields, option.Label, picker);
+#if RESTARTER64
+                if (option.Key == "upscaler")
+                {
+                    bool nvidia = NvidiaAdapter.IsPresent(out string reason);
+                    // Keep an existing DLSS selection even if unavailable here.
+                    // The engine's NGX capability check is authoritative.
+                    picker.Controls[1].Enabled = nvidia;
+                    tip.SetToolTip(picker.Controls[1], nvidia
+                        ? (UiText.Language == "ru" ? "Доступность DLSS проверит игра." : "The game checks DLSS support.") : reason);
+                    fields.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(720, 0),
+                        Text = nvidia
+                            ? (UiText.Language == "ru" ? "NVIDIA обнаружена. Поддержку DLSS проверит игра; автоматической замены режима нет."
+                                : "NVIDIA detected. The game checks DLSS support; the mode is never replaced automatically.")
+                            : reason, Margin = new Padding(0, 0, 0, 8) });
+                }
+#endif
                 combo.SelectedIndexChanged += (sender, args) => UpdateOwnedPreset();
             }
             else

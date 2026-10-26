@@ -100,6 +100,9 @@ namespace EIStarter
         {
             int graphicsSections = 0, setupSections = 0, firstRunKeys = 0;
             string section = "";
+#if RESTARTER64
+            int legacyUpscaler = 0;
+#endif
             foreach (Line line in Lines(text))
             {
                 string header = Header(line.Content);
@@ -116,6 +119,11 @@ namespace EIStarter
                     if (values.ContainsKey(key)) return false;
                     values[key] = value;
                 }
+#if RESTARTER64
+                else if (section.Equals("graphics", StringComparison.OrdinalIgnoreCase) &&
+                         key.Equals("dlss_mode", StringComparison.OrdinalIgnoreCase))
+                    int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out legacyUpscaler);
+#endif
                 else if (section.Equals("setup", StringComparison.OrdinalIgnoreCase) &&
                          key.Equals("first_run_done", StringComparison.OrdinalIgnoreCase))
                 {
@@ -124,6 +132,15 @@ namespace EIStarter
                         value.Equals("on", StringComparison.OrdinalIgnoreCase);
                 }
             }
+#if RESTARTER64
+            // Match the engine's v3 migration when opening a pre-v3 profile.
+            if (legacyUpscaler >= 1 && legacyUpscaler <= 10)
+            {
+                if (!values.ContainsKey("upscaler")) values["upscaler"] = legacyUpscaler <= 5 ? "1" : "2";
+                if (!values.ContainsKey("upscaler_quality")) values["upscaler_quality"] =
+                    ((legacyUpscaler - 1) % 5).ToString(CultureInfo.InvariantCulture);
+            }
+#endif
             return graphicsSections <= 1 && setupSections <= 1 && firstRunKeys <= 1;
         }
 

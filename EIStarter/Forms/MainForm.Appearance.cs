@@ -27,6 +27,10 @@ namespace EIStarter
             btWeb.Text = UiText.Get("Website");
             btModInfo.Text = UiText.Get("AboutMod");
             btLang.Text = lang.ToUpperInvariant();
+#if RESTARTER64
+            var aboutButtons = Controls.Find("aboutReStarter64", true);
+            if (aboutButtons.Length > 0) aboutButtons[0].Text = lang == "ru" ? "О программе" : "About";
+#endif
 
 
             for (int i = 0; i < themeChoices.Controls.Count; i++) themeChoices.Controls[i].AccessibleName = UiText.Get(i == 0 ? "DarkTheme" : "LightTheme");
@@ -87,6 +91,17 @@ namespace EIStarter
                 StyleAction(button, false);
                 navigation.Controls.Add(button);
             }
+#if RESTARTER64
+            navigation.WrapContents = true;
+            var about = SelectionControls.Button(lang == "ru" ? "О программе" : "About");
+            about.Name = "aboutReStarter64";
+            about.Click += (sender, args) => MessageBox.Show(this,
+                "ReStarter64 / EIRebuild64\n\nThis product uses NVIDIA DLSS and NVIDIA NGX.\n"
+                + "NVIDIA DLSS SDK. Copyright NVIDIA Corporation. All rights reserved.",
+                lang == "ru" ? "О программе ReStarter64" : "About ReStarter64",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            navigation.Controls.Add(about);
+#endif
             launch.Controls.Add(navigation, 0, 2);
             launch.SetColumnSpan(navigation, 2);
             appearanceChoice = new ComboBox { Name = "appearanceChoice", DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, Margin = new Padding(20, 22, 0, 0), AccessibleName = "Theme" };

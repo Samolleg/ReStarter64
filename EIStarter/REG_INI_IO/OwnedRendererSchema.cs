@@ -27,8 +27,17 @@ namespace EIStarter
 
     internal static class OwnedRendererSchema
     {
+#if RESTARTER64
+        internal const int PlayerSettingCount = 51;
+#else
         internal const int PlayerSettingCount = 49;
+#endif
         internal static readonly OwnedRendererOption[] Options = {
+#if RESTARTER64
+            // Renderer settings_version 3: dlss_frame.h and register_config_options.
+            new OwnedRendererOption("upscaler", 0, OwnedValueType.Integer, 0m, 0m, 2m, 1m, null, new string[] { "Off", "DLSS", "FSR" }, "Upscaling", "Масштабирование"),
+            new OwnedRendererOption("upscaler_quality", 0, OwnedValueType.Integer, 0m, 0m, 4m, 1m, null, new string[] { "Quality", "Balanced", "Performance", "Ultra Performance", "DLAA / FSR Native AA" }, "Upscaling quality", "Качество масштабирования"),
+#endif
             new OwnedRendererOption("display_mode", 0, OwnedValueType.Integer, 0m, 0m, 1m, 1m, null, new string[] { "Borderless fullscreen", "Windowed" }, "Display mode", "Режим окна"),
             new OwnedRendererOption("window_width", 0, OwnedValueType.Integer, 0m, 0m, 16384m, 1m, null, null, "Window size", "Ширина окна"),
             new OwnedRendererOption("window_height", 0, OwnedValueType.Integer, 0m, 0m, 16384m, 1m, null, null, "Window height", "Высота окна"),
