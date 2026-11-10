@@ -5,6 +5,9 @@
 #include <shellapi.h>
 #include <shlobj.h>
 #include <set>
+#include <atomic>
+#include <dxgi.h>
+#pragma comment(lib, "dxgi.lib")
 #include <tuple>
 #include <windowsx.h>
 #pragma comment(lib, "gdiplus.lib")
@@ -28,10 +31,25 @@ static Profile profile;
 static Game game;
 static std::vector<Mod> modifications;
 static int selected = -1;
+static S currentLanguage;
+static std::vector<S> availableLanguages;
+static void setLanguage(const S &value)
+{
+    currentLanguage=value; language=1;
+    const wchar_t *codes[]={L"",L"en",L"ru",L"de",L"fr",L"pl",L"ko",L"zh"};
+    for(int i=1;i<=7;++i) if(value==codes[i]) language=i;
+}
+static void nextLanguage()
+{
+    auto at=std::find(availableLanguages.begin(),availableLanguages.end(),currentLanguage);
+    if(at==availableLanguages.end() || ++at==availableLanguages.end()) at=availableLanguages.begin();
+    setLanguage(*at);
+}
 static HWND modCombo, playButton;
 static std::unique_ptr<Gdiplus::Bitmap> artwork;
 static std::vector<HWND> mainControls;
-static const S exeName = L"EIRebuild.exe";
+static const S exeName = L"EIRebuild64.exe";
+static std::atomic<int> nvidia{0}; // pending, present, absent, failed
 static void (*ensureVisible)(HWND) = nullptr;
 static int px(int n)
 {
@@ -72,7 +90,7 @@ static S windowText(HWND w)
 static void error(HWND w, const std::exception &e)
 {
     std::string a = e.what();
-    MessageBoxW(w, decode(Bytes(a.begin(), a.end())).c_str(), L"ReStarter", MB_ICONERROR);
+    MessageBoxW(w, decode(Bytes(a.begin(), a.end())).c_str(), L"ReStarter64", MB_ICONERROR);
 }
 
 static void open(HWND w, const S &path)
@@ -404,7 +422,30 @@ static HWND modalWindow(const wchar_t *name, const S &title, int width, int heig
                        std::max(monitor.rcWork.top, monitor.rcWork.bottom - h));
     return CreateWindowExW(extra, name, title.c_str(), style, x, y, w, h, owner, nullptr, instance, nullptr);
 }
+static DWORD WINAPI detectNvidia(void *)
+{
+    IDXGIFactory *factory=nullptr;
+    int result=3;
+    if(SUCCEEDED(CreateDXGIFactory(__uuidof(IDXGIFactory),(void**)&factory)))
+    {
+        for(UINT i=0;;++i)
+        {
+            IDXGIAdapter *adapter=nullptr;
+            HRESULT hr=factory->EnumAdapters(i,&adapter);
+            if(hr==DXGI_ERROR_NOT_FOUND) { result=2; break; }
+            if(FAILED(hr)) break;
+            DXGI_ADAPTER_DESC desc{};
+            hr=adapter->GetDesc(&desc); adapter->Release();
+            if(FAILED(hr)) break;
+            if(desc.VendorId==0x10de) { result=1; break; }
+        }
+        factory->Release();
+    }
+    nvidia.store(result);
+    return 0;
+}
 #include "settings.inl"
+#include "information.inl"
 
 static void mainLayout()
 {
@@ -447,8 +488,10 @@ static void saveLauncher()
             p = p.substr(root.size() + 1);
         m[L"ModSel"] = p;
     }
-    const wchar_t *langs[] = {L"", L"en", L"ru", L"de", L"fr", L"pl", L"ko", L"zh"};
-    m[L"language"] = langs[language];
+    m[L"language"] = currentLanguage;
+    m[L"Theme"] = setting(L"Theme");
+    m[L"ModSkins"] = setting(L"ModSkins",L"True");
+    m[L"UsingINIconfigs"] = setting(L"UsingINIconfigs",L"False");
     m[L"UiTheme"] = dark ? L"graphite" : L"light";
     settings(m);
     if (selected >= 0 && selected < (int)modifications.size())
@@ -461,7 +504,7 @@ static void mainLabels()
     for (int i = 0; i < 4; i++)
         SetWindowTextW(mainControls[i + 2], tr(labels[i]).c_str());
     const wchar_t *langs[] = {L"", L"EN", L"RU", L"DE", L"FR", L"PL", L"KO", L"ZH"};
-    SetWindowTextW(mainControls[6], langs[language]);
+    SetWindowTextW(mainControls[6], currentLanguage.c_str());
     SetWindowTextW(mainControls[7], tr(L"DarkTheme").c_str());
     SetWindowTextW(mainControls[8], tr(L"LightTheme").c_str());
     S title = selected >= 0 ? modifications[selected].title : tr(L"NoMods");
@@ -593,16 +636,9 @@ static LRESULT CALLBACK mainProc(HWND w, UINT m, WPARAM a, LPARAM b)
                 case 11:
                     options();
                     break;
-                case 12: {
-                    const wchar_t *langs[] = {L"", L"en", L"ru", L"de", L"fr", L"pl", L"ko", L"zh"};
-                    S p = join(root, L"lang\\" + S(langs[language]) + L"\\readme.txt");
-                    if (!exists(p))
-                        p = join(root, L"lang\\en\\readme.txt");
-                    if (!exists(p))
-                        p = join(root, L"ПРОЧИТАЙ.txt");
-                    open(w, p);
+                case 12:
+                    information();
                     break;
-                }
                 case 13:
                     open(w, L"https://vk.ru/ei_dejavu");
                     break;
@@ -610,7 +646,7 @@ static LRESULT CALLBACK mainProc(HWND w, UINT m, WPARAM a, LPARAM b)
                     about();
                     break;
                 case 15:
-                    language = language % 7 + 1;
+                    nextLanguage();
                     mainLabels();
                     saveLauncher();
                     break;
@@ -650,9 +686,15 @@ static LRESULT CALLBACK mainProc(HWND w, UINT m, WPARAM a, LPARAM b)
 static void loadArtwork()
 {
     S path = join(root, L"background.jpg");
-    if (!exists(path))
-        return;
-    auto b = readFile(path);
+    Bytes b;
+    if(exists(path)) b=readFile(path);
+    else
+    {
+        auto r=FindResourceW(instance,MAKEINTRESOURCEW(104),RT_RCDATA);
+        if(!r) return;
+        auto p=(BYTE*)LockResource(LoadResource(instance,r));
+        b.assign(p,p+SizeofResource(instance,r));
+    }
     HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, b.size());
     if (!mem)
         return;
@@ -687,12 +729,17 @@ int run(HINSTANCE h)
     root = root.substr(0, root.find_last_of(L"\\"));
     SetCurrentDirectoryW(root.c_str());
     profile.open();
-    S lang = setting(L"language", PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_RUSSIAN ? L"ru" : L"en");
-    const wchar_t *langs[] = {L"", L"en", L"ru", L"de", L"fr", L"pl", L"ko", L"zh"};
-    language = 1;
-    for (int i = 1; i <= 7; i++)
-        if (lang == langs[i])
-            language = i;
+    wchar_t locale[LOCALE_NAME_MAX_LENGTH]={};
+    GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT,LOCALE_SISO639LANGNAME,locale,LOCALE_NAME_MAX_LENGTH);
+    setLanguage(setting(L"language",locale[0]?locale:L"en"));
+    WIN32_FIND_DATAW entry{};
+    HANDLE languages=FindFirstFileW(join(root,L"lang\\*").c_str(),&entry);
+    if(languages!=INVALID_HANDLE_VALUE)
+    {
+        do { if((entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && entry.cFileName[0]!=L'.') availableLanguages.push_back(entry.cFileName); } while(FindNextFileW(languages,&entry));
+        FindClose(languages);
+    }
+    if(availableLanguages.empty()) availableLanguages.push_back(L"en");
     dark = setting(L"UiTheme", L"graphite") != L"light";
     // System-DPI aware works on Windows 7 and keeps a consistent pixel contract.
     SetProcessDPIAware();
@@ -722,8 +769,10 @@ int run(HINSTANCE h)
     if (!InitCommonControlsEx(&common))
         fail(L"Common controls initialization failed");
     brushes();
+    HANDLE inventory=CreateThread(nullptr,0,detectNvidia,nullptr,0,nullptr);
+    if(inventory) CloseHandle(inventory); else nvidia.store(3);
     modifications = mods();
-    loadArtwork();
+    try { loadArtwork(); } catch(const std::exception &) { artwork.reset(); }
     WNDCLASSEXW wc{sizeof(wc)};
     wc.hInstance = h;
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
@@ -732,6 +781,9 @@ int run(HINSTANCE h)
     wc.lpfnWndProc = mainProc;
     wc.lpszClassName = L"ReStarter.Native.Main";
     wc.style = CS_HREDRAW | CS_VREDRAW;
+    RegisterClassExW(&wc);
+    wc.lpfnWndProc = informationProc;
+    wc.lpszClassName = L"ReStarter64.Information";
     RegisterClassExW(&wc);
     wc.lpfnWndProc = settingsProc;
     wc.lpszClassName = L"ReStarter.Native.Settings";
@@ -756,7 +808,7 @@ int run(HINSTANCE h)
     RegisterClassExW(&wc);
     RECT initial{0, 0, px(960), px(650)};
     AdjustWindowRectEx(&initial, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE, WS_EX_CONTROLPARENT);
-    HWND w = CreateWindowExW(WS_EX_CONTROLPARENT, L"ReStarter.Native.Main", L"ReStarter",
+    HWND w = CreateWindowExW(WS_EX_CONTROLPARENT, L"ReStarter.Native.Main", L"ReStarter64",
                              WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT,
                              initial.right - initial.left, initial.bottom - initial.top, nullptr, nullptr, h,
                              nullptr);
@@ -764,6 +816,7 @@ int run(HINSTANCE h)
         check(GetLastError(), L"Create main window");
     ShowWindow(w, SW_SHOW);
     UpdateWindow(w);
+    if(gameRunning(exeName)) MessageBoxW(w,tr(L"GameRunning").c_str(),tr(L"Warning").c_str(),MB_ICONWARNING);
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0)
     {
@@ -801,10 +854,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, LPWSTR, int)
         CoUninitialize();
         return 1;
     }
-    HANDLE mutex = CreateMutexW(nullptr, TRUE, L"ReStarterSharp");
+    HANDLE mutex = CreateMutexW(nullptr, TRUE, L"ReStarter64Sharp");
     if (!mutex || GetLastError() == ERROR_ALREADY_EXISTS)
     {
-        MessageBoxW(nullptr, L"ReStarter is already running.", L"ReStarter", MB_ICONINFORMATION);
+        MessageBoxW(nullptr, L"ReStarter is already running.", L"ReStarter64", MB_ICONINFORMATION);
         if (mutex)
             CloseHandle(mutex);
         Gdiplus::GdiplusShutdown(token);

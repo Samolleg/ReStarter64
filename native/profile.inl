@@ -1,9 +1,9 @@
 // File-backed settings for ReStarter. The legacy namespace is read-only and
-// used only before restarter-settings.xml has been created.
+// used only before restarter64-settings.xml has been created.
 static Values profileValues;
 static S profilePath()
 {
-    return join(root, L"restarter-settings.xml");
+    return join(root, L"restarter64-settings.xml");
 }
 void refreshProfile()
 {
@@ -75,7 +75,7 @@ void commitProfile(const Values &before, const Values &changes)
 {
     if (changes.empty())
         return;
-    if (gameRunning(L"EIRebuild.exe"))
+    if (gameRunning(L"EIRebuild64.exe"))
         fail(text(L"Close EIRebuild before saving settings.",
                   L"Закройте EIRebuild перед сохранением настроек."));
     const S path = profilePath();
@@ -164,60 +164,19 @@ void selectMod(const Mod &mod)
 }
 void Profile::open()
 {
-    if (gameRunning(L"EIRebuild.exe"))
-        fail(text(L"Close EIRebuild before opening ReStarter.",
-                  L"Закройте EIRebuild перед открытием ReStarter."));
-    wchar_t app[MAX_PATH];
-    check(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, nullptr, 0, app),
-          L"LocalAppData");
-    const S directory = join(app, L"ReStarter");
-    if (!CreateDirectoryW(directory.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS)
-        check(GetLastError(), directory);
     if (!exists(profilePath()))
     {
-        // Only this first-run branch may read the original starter's data.
-        const S portable = join(root, L"portable-settings.xml");
-        Bytes imported;
-        Values values;
-        if (exists(portable))
+        const S defaults = join(root, L"restarter64-defaults.xml");
+        if (!exists(defaults)) atomicFile(defaults, embeddedDefaultProfile());
+        Ini config(join(root, L"restarter64.config"));
+        if (config.get(L"Settings", L"ExecutablePath").empty())
         {
-            imported = readFile(portable);
-            values = loadProfileBytes(imported, portable);
+            config.set(L"Settings", L"ExecutablePath", L"Engine64\\EIRebuild64.exe");
+            config.save([] {});
         }
-        else
-            values = legacy::readValues();
-        const S defaults = join(root, L"restarter-defaults.xml");
-        if (!exists(defaults))
-            atomicFile(defaults, embeddedDefaultProfile());
-        if (values.empty())
-        {
-            imported = readFile(defaults);
-            loadProfileBytes(imported, defaults);
-        }
-        const S configPath = join(root, L"restarter.config"), oldConfig = join(root, L"starter.config");
-        if (!exists(configPath) && exists(oldConfig))
-        {
-            Ini source(oldConfig), destination(configPath);
-            for (const auto key :
-                 {L"ModSel", L"language", L"Theme", L"UiTheme", L"ModSkins", L"UsingINIconfigs"})
-            {
-                const S value = source.get(L"Settings", key);
-                if (!value.empty())
-                    destination.set(L"Settings", key, value);
-            }
-            destination.save([] {});
-        }
-        const S renderer = join(root, L"Engine\\rddraw.ini"),
-                oldRenderer = join(root, L"Engine\\eid3d11.ini");
-        if (!exists(renderer) && exists(oldRenderer))
-            atomicFile(renderer, readFile(oldRenderer));
-        if (exists(profilePath()))
-            fail(tr(L"SettingsChanged"));
-        // Publish last so a failed import can be retried without a partial profile.
-        if (!imported.empty())
-            atomicFile(profilePath(), imported);
-        else
-            saveProfile(profilePath(), values);
+        auto bytes = readFile(defaults);
+        loadProfileBytes(bytes, defaults);
+        atomicFile(profilePath(), bytes);
     }
     refreshProfile();
 }

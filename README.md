@@ -1,54 +1,42 @@
-# ReStarter
+# ReStarter64 на C++ x64
 
-Самостоятельный локальный стартер EIRebuild на C++ с сохранённой исходной C#-версией на основе Evilauncher `5572879`.
-Проект импортирован отдельным первым коммитом; прежний Evilauncher не меняется.
-Сохраняются оформление, локализация, выбор мода и форма настроек рендера.
+Кандидат RS64CPP01 пока не готов к приёмке: после единственной разрешённой сборки
+исправлен исходник раскладки. Актуальный исходник не пересобран; готового `kit` нет.
+Полная карта C# → C++, форматы, отличия и оставшиеся работы:
+[docs/native64-migration.md](docs/native64-migration.md).
 
-ReStarter запускает только `Engine\EIRebuild.exe` со встроенным рендером,
-передаёт абсолютный `-profile "…\restarter-settings.xml"` и рабочий каталог
-`Engine`. Проверок по хешам совместимых компонентов нет.
+## Сборка
 
-Настройки: `restarter.config`, `restarter-settings.xml`,
-`restarter-defaults.xml`, `Engine\rddraw.ini`. Мьютекс `ReStarterSharp`,
-служебная папка `%LOCALAPPDATA%\ReStarter`. Реестр для обычной работы не нужен.
-При отсутствии нового XML-профиля один раз импортируется `portable-settings.xml`,
-либо старый `EI_Starter` через строго read-only код. Настройки стартера
-импортируются из `starter.config` без `ExeName`, рендер — из `eid3d11.ini`.
-Существующие собственные config/defaults/INI сохраняются. Старые источники не
-изменяются. Встроенные defaults происходят из исходного Evilauncher.
+Нужны Visual Studio 2022 Build Tools, MSVC v143 x64 и Windows SDK 10.0.22621.0.
+Зависимости не скачиваются. Из корня репозитория:
 
-XML использует исходные имена секций/опций и числовые `RegistryValueKind`.
-Опции публикуются атомарной заменой файла; прочитанные значения проверяются
-на конфликт, непрочитанные чужие значения и XML-метаданные сохраняются.
-Кнопка «По умолчанию» загружает собственные defaults, изменения записываются
-при применении; пути ресурсов сохраняются. Настройки встроенного рендера имеют отдельные
-пресеты в прежней форме.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File build-native.ps1 -OutputPath <папка>
+```
 
-Меняйте настройки при закрытом EIRebuild: протокол согласованной одновременной
-записи двух разных процессов в один XML не предусмотрен. Атомарная замена
-предотвращает частичный XML, но не обеспечивает межпроцессную транзакцию.
-Совместимость с текущим EIRebuild предполагает реализацию RESTARTER-CONTRACT.
+Результат команды — `ReStarter64.exe` и `ReStarter64.pdb`. C++17, `/MT`, `/O2`,
+`/Zi`, `/MACHINE:X64`, полный PDB. Схема F10 генерируется из сохранённого C#-источника.
+Иконка, штатный фон, локализация, defaults и лицензии встроены в EXE.
+Внешний пользовательский `background.jpg` имеет приоритет.
 
-Нативная версия C++ без .NET: `powershell -NoProfile -ExecutionPolicy Bypass
--File build-native.ps1 -OutputPath <папка>`. Результат — `ReStarter.exe` и
-`background.jpg`; дополнительные System.*.dll и `.exe.config` не нужны.
-Целевая ОС — Windows 7 SP1 и новее (проверка на самой ОС остаётся за владельцем).
-Оформление и функции native EIStarter перенесены с отдельным профилем ReStarter,
-настройками `rddraw.ini` и пресетом «Авто». Подробности: [native/README.md](native/README.md).
+## Комплект и размещение
 
-Исходная C#-версия сохранена. Её сборка: .NET Framework 4.7.2 и Visual Studio Build Tools, команда
-`powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1`.
-Результат: `EIStarter/bin/Release/ReStarter.exe` и зависимости. Исходное имя
-каталога и namespace оставлены для ресурсных привязок импортированного UI.
-Проверки: [tests/README.md](tests/README.md).
+Целевой комплект — один нативный `ReStarter64.exe` + PDB (и SHA256SUMS задания).
+PDB остаётся в builds. .NET, System.*.dll, exe.config, VC++ Redistributable
+и дополнительные пользовательские DLL не нужны. EXE использует системные Win32,
+GDI+, DXGI, COM/MSXML6 и Crypt32. Проверка импортов первой сборки показала только
+системные DLL; MSXML6 создаётся через COM, поэтому не отображается в таблице импортов.
 
-Для установки нативной версии владельцем нужны только ReStarter.exe и
-background.jpg в корне игры. Для исходной C#-версии также нужны .config и
-её зависимости. EIStarter.exe,
-game.exe, ddraw.dll и прежние XML/INI оставляются на месте. EIRebuild/RDDraw
-устанавливаются отдельно владельцем из их проверенного комплекта.
-По первому запуску ReStarter создаст собственные файлы рядом с собой.
-В этой задаче установка не выполняется.
+Стартер размещается в корне игры; обычный путь движка — `Engine64/EIRebuild64.exe`.
+Собственные файлы: `restarter64.config`, `restarter64-settings.xml`,
+`restarter64-defaults.xml`, `Config64/rddraw.ini` и активный профиль HUD.
+Переноса старых x86-настроек и обращения к реестру нет. Запуск передаёт
+`-profile "<абсолютный XML>" --mod "<абсолютный каталог мода>"`.
+Форматы и сохранение посторонних значений описаны в карте миграции.
 
-Авторы исходного Evilauncher: Atm; благодарности Demoth, Void Dragon,
-Lost Soul, Asp Adm. Лицензия зависимостей: distribution/Microsoft-MIT.txt.
+C#-версия остаётся до приёмки и в нативный комплект не включается.
+Её сборка: `powershell -File build.ps1 -Configuration Release64`, .NET Framework 4.7.2.
+Историческая документация C# x64: [docs/ReStarter64.md](docs/ReStarter64.md).
+
+Wine/Proton, визуальная приёмка и игровой запуск не подтверждены.
+Установка, merge/push/PR и запуск игры не выполнялись.
