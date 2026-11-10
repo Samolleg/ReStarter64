@@ -918,7 +918,25 @@ std::vector<Mod> mods()
                         S name = str(p + 3, nl, 1251);
                         size_t v = p + 3 + nl;
                         if (type == 2)
-                            props[name] = str(v + 2, u16(v), 1251);
+                            {
+                            const size_t length = u16(v);
+                            if (v + 2 + length > b.size())
+                                fail(L"Invalid config.reg: " + reg);
+                            // EIRegFile.DecodeString: strict UTF-8 (optional BOM),
+                            // then Windows-1251. Section/key names remain CP1251.
+                            size_t offset = v + 2, size = length;
+                            if (size >= 3 && b[offset] == 0xEF && b[offset + 1] == 0xBB &&
+                                b[offset + 2] == 0xBF)
+                            {
+                                offset += 3;
+                                size -= 3;
+                            }
+                            const char *data = (const char *)b.data() + offset;
+                            const UINT cp = !size || MultiByteToWideChar(
+                                CP_UTF8, MB_ERR_INVALID_CHARS, data, (int)size, nullptr, 0)
+                                                ? CP_UTF8 : 1251;
+                            props[name] = decodeCodepage(std::string(data, size), cp);
+                        }
                         else if (type == 0)
                             props[name] = std::to_wstring(u32(v));
                     }
