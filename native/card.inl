@@ -10,7 +10,7 @@ struct ModCard
     std::vector<HWND> buttons;
     std::vector<S> paths;
     std::vector<MetaRow> rows;
-    S title;
+    S title, pluginPath;
     int scroll = 0, total = 0;
 };
 static ModCard *card = nullptr;
@@ -194,7 +194,18 @@ static LRESULT CALLBACK cardProc(HWND w, UINT m, WPARAM a, LPARAM b)
             if (id == 800)
                 DestroyWindow(w);
             else if (id >= 801 && id < 801 + (int)card->paths.size())
-                open(w, card->paths[id - 801]);
+            {
+                const S &path=card->paths[id-801];
+                if(path==card->pluginPath)
+                {
+                    wchar_t system[MAX_PATH];
+                    if(!GetSystemDirectoryW(system,MAX_PATH)) check(GetLastError(),L"System directory");
+                    S command=L"/C \""+path+L"\"";
+                    auto result=(INT_PTR)ShellExecuteW(w,L"open",join(system,L"cmd.exe").c_str(),command.c_str(),nullptr,SW_SHOWNORMAL);
+                    if(result<=32) fail(L"Cannot start mod action");
+                }
+                else open(w,path);
+            }
         }
         catch (const std::exception &e)
         {
@@ -291,8 +302,11 @@ static void about()
     action(tr(L"btReadme"), readme);
     action(tr(L"btChangelog"), changelog);
     action(tr(L"btModFolder"), m.path);
-    if (!m.plugin.empty() && lower(full(join(m.path, m.plugin))).find(lower(m.path) + L"\\") == 0)
-        action(m.pluginText.empty() ? L"Plugin" : m.pluginText, join(m.path, m.plugin));
+    if (!m.plugin.empty() && exists(join(m.path, m.plugin)))
+    {
+        data.pluginPath=join(m.path,m.plugin);
+        action(m.pluginText.empty() ? L"Plugin" : m.pluginText, data.pluginPath);
+    }
     auto close = button(data.window, tr(L"Close"), 800);
     SendMessageW(close, WM_SETFONT, (WPARAM)sectionFont, FALSE);
     data.buttons.push_back(close);

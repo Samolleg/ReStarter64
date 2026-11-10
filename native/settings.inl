@@ -8,7 +8,8 @@ struct Row
     const Option *option = nullptr;
     std::vector<S> choices;
     double minimum = 0;
-    HWND labelWindow = nullptr, edit = nullptr, host = nullptr, drop = nullptr;
+    HWND labelWindow = nullptr, edit = nullptr, host = nullptr, drop = nullptr, standards = nullptr;
+    std::vector<int> standardValues;
     std::vector<HWND> buttons;
     Value baseline;
     bool path = false, locked = false, toggle = false;
@@ -28,18 +29,20 @@ struct Settings
     std::vector<Block> blocks;
     std::vector<S> groupTitles;
     std::vector<bool> expanded;
-    int page = 0, scroll = 0, total = 0, layoutWidth = 0, layoutDepth = 0;
+    int page = 0, scroll = 0, total = 0, layoutWidth = 0, layoutDepth = 0, presetOffset = 1, adapterState = -1;
     bool updating = false, rendererAvailable = false, autoPreset = true, confirmPreset = false;
-    std::unique_ptr<Ini> renderer;
+    std::unique_ptr<Ini> renderer, hud;
+    S hudName, rendererError;
     Values baseline;
-    Ini launcher{join(root, L"restarter.config")};
+    Ini launcher{join(root, L"restarter64.config")};
     std::vector<S> displayModes;
 };
 static Settings *currentSettings = nullptr;
-static const wchar_t *categories[] = {
-    L"OwnedCategoryDisplay", L"OwnedCategoryLighting",   L"OwnedCategoryTerrain",
-    L"OwnedCategoryWater",   L"OwnedCategoryVegetation", L"OwnedCategoryAtmosphere",
-    L"OwnedCategoryEffects", L"OwnedCategoryWorld",      L"OwnedCategoryInterface"};
+static bool interfaceKey(const Option &o)
+{
+    S key = o.key;
+    return o.category == 11 || (o.category == 8 && key != L"confine_cursor" && key.find(L"highlight_") != 0);
+}
 static S choiceLabel(const S &s)
 {
     if (s == L"Off" || s == L"On")
@@ -149,7 +152,7 @@ static void select(Row &r, int choice)
     if (choice < 0 || choice >= (int)r.choices.size())
         choice = -1;
     r.choice = choice;
-    if (r.toggle)
+    if (r.toggle && !r.buttons.empty())
     {
         auto w = r.buttons[0];
         S label = choice < 0 ? tr(L"Unspecified") : tr(choice ? L"On" : L"Off");
@@ -293,15 +296,16 @@ static void cameraRows(Settings &s)
         }
     }
 }
-static void rowFields(Settings &s)
+static void rowFields(Settings &s, int onlyPage = 0)
 {
-    s.tooltips =
+    if(!s.tooltips) s.tooltips =
         CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, nullptr, WS_POPUP | TTS_ALWAYSTIP, CW_USEDEFAULT,
                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, s.window, nullptr, instance, nullptr);
     SendMessageW(s.tooltips, TTM_SETMAXTIPWIDTH, 0, px(420));
     for (int index = 0; index < (int)s.rows.size(); index++)
     {
         auto &r = s.rows[index];
+        if(r.labelWindow || r.page!=onlyPage || (onlyPage==0 && r.category>=0 && !s.expanded[r.category])) continue;
         r.knownChoices = (int)r.choices.size();
         r.labelWindow = control(s.canvas, L"STATIC", r.label, 0, SS_LEFT | SS_NOPREFIX);
         if (r.key == L"videoresolution")
@@ -344,7 +348,7 @@ static void rowFields(Settings &s)
                 }
             if (r.toggle)
             {
-                auto w = button(s.canvas, L"", 3000 + index * 8);
+                auto w = button(s.canvas, L"", 5000 + index * 16);
                 SetPropW(w, L"toggle", (HANDLE)1);
                 SendMessageW(w, WM_SETFONT, (WPARAM)sectionFont, FALSE);
                 r.buttons.push_back(w);
@@ -358,7 +362,7 @@ static void rowFields(Settings &s)
                 }
                 for (int j = 0; j < (int)r.choices.size(); j++)
                 {
-                    auto w = button(s.canvas, choiceLabel(r.choices[j]), 3000 + index * 8 + j);
+                    auto w = button(s.canvas, choiceLabel(r.choices[j]), 5000 + index * 16 + j);
                     SendMessageW(w, WM_SETFONT, (WPARAM)sectionFont, FALSE);
                     r.buttons.push_back(w);
                 }
@@ -410,9 +414,26 @@ static void rowFields(Settings &s)
                     return DefSubclassProc(w, m, a, b);
                 },
                 4, 0);
+        if(r.key==L"frame_limit" || r.key==L"render_scale")
+        {
+            r.standardValues = r.key==L"frame_limit" ? std::vector<int>{0,30,60,90,120,144,165,240} : std::vector<int>{50,67,75,85,100};
+            r.standards=control(s.canvas,L"COMBOBOX",L"",25000+index,WS_TABSTOP|CBS_DROPDOWNLIST|WS_VSCROLL);
+            SendMessageW(r.standards,WM_SETFONT,(WPARAM)font,FALSE);
+            for(int value:r.standardValues)
+            {
+                S label=value==0 ? tr(L"Off") : std::to_wstring(value)+(r.key==L"render_scale"?L"%":L" FPS");
+                SendMessageW(r.standards,CB_ADDSTRING,0,(LPARAM)label.c_str());
+            }
+            SendMessageW(r.standards,CB_ADDSTRING,0,(LPARAM)text(L"Custom",L"Своё").c_str());
+        }
+        if (r.option && r.option->type != 3 && r.edit)
+        {
+            r.buttons.push_back(button(s.canvas,L"−",20000+index*2));
+            r.buttons.push_back(button(s.canvas,L"+",20001+index*2));
+        }
         if (r.path && !r.locked)
         {
-            auto w = button(s.canvas, L"…", 6000 + index);
+            auto w = button(s.canvas, L"…", 16000 + index);
             SendMessageW(w, WM_SETFONT, (WPARAM)sectionFont, FALSE);
             r.buttons.push_back(w);
         }
@@ -426,7 +447,7 @@ static void rowFields(Settings &s)
                         if (m == WM_KEYDOWN && currentSettings &&
                             (a == VK_LEFT || a == VK_RIGHT || a == VK_HOME || a == VK_END))
                         {
-                            int id = GetDlgCtrlID(w), row = (id - 3000) / 8, choice = (id - 3000) % 8;
+                            int id = GetDlgCtrlID(w), row = (id - 5000) / 16, choice = (id - 5000) % 16;
                             auto &buttons = currentSettings->rows[row].buttons;
                             int count = (int)buttons.size();
                             int next = a == VK_HOME  ? 0
@@ -496,28 +517,43 @@ static void syncPreset(Settings &s, bool manualChoice = false)
     }
     for (auto &r : s.rows)
         if (r.key == L"$preset")
-            select(r, s.autoPreset ? 0 : detected + 1);
+            select(r, s.autoPreset ? 0 : detected + s.presetOffset);
 }
 static void buildSettings(Settings &s)
 {
     refreshProfile();
-    s.renderer = std::make_unique<Ini>(join(root, L"Engine\\rddraw.ini"));
+    const wchar_t *en[] = {L"Display & Anti-aliasing", L"Lighting & Shadows", L"Terrain", L"Water", L"Vegetation & Ground Cover", L"Atmosphere", L"Effects & Particles", L"World", L"Interface", L"Critters", L"Language", L"HUD layout", L"Combat healthplates and effects"};
+    const wchar_t *ru[] = {L"Экран и сглаживание", L"Свет и тени", L"Ландшафт", L"Вода", L"Растительность", L"Атмосфера", L"Эффекты и частицы", L"Мир", L"Интерфейс", L"Мелкие животные", L"Язык", L"Расположение панелей", L"Полосы здоровья и боевые эффекты"};
+    for (int i=0; i<13; ++i) s.groupTitles.push_back(language == 2 ? ru[i] : en[i]);
+    try
+    {
+    s.renderer = std::make_unique<Ini>(join(root, L"Config64\\rddraw.ini"));
     s.renderer->validate();
-    s.rendererAvailable = exists(join(root, L"Engine\\EIRebuild.exe"));
-    for (auto key : categories)
-        s.groupTitles.push_back(tr(key));
-    addProfileSetting(s, 0, tr(L"lbResolution"), L"EvilIslands\\General Settings", L"videoresolution", 2);
-    s.displayModes = resolutions();
-    s.rows.back().choices = s.displayModes;
-    addProfileSetting(s, 0, tr(L"lbAudio"), L"EvilIslands\\General Settings", L"audio", 1);
-    s.rows.back().choices = {tr(L"Off"), tr(L"Normal"), tr(L"Safe")};
+    s.rendererAvailable = exists(executable());
+    s.hudName = s.renderer->get(L"graphics", L"interface_profile", L"default");
+    if (s.hudName.empty() || utf8(s.hudName).size() > 48 || s.hudName[0] == L'.' ||
+        s.hudName.front() == L' ' || s.hudName.back() == L' ' ||
+        s.hudName.find_first_of(L"\\/:*?\"<>|") != S::npos ||
+        std::any_of(s.hudName.begin(),s.hudName.end(),[](wchar_t c){return c<32;})) s.hudName=L"default";
+    s.hud = std::make_unique<Ini>(join(root, L"Config64\\rddraw_profiles\\" + s.hudName + L".ini"));
+    s.hud->validate();
+    }
+    catch(const std::exception &e)
+    {
+        std::string message=e.what();
+        s.rendererError=decode(Bytes(message.begin(),message.end()));
+        s.rendererAvailable=false;
+        s.renderer=std::make_unique<Ini>(S{});
+        s.hud=std::make_unique<Ini>(S{});
+    }
     Row preset;
     preset.label = tr(L"OwnedRendererPreset");
     preset.key = L"$preset";
     preset.locked = !s.rendererAvailable;
     S firstRun = lower(s.renderer->get(L"setup", L"first_run_done"));
     s.autoPreset = !(firstRun == L"true" || firstRun == L"on" || firstRun == L"1");
-    preset.choices.push_back(tr(L"OwnedPresetAuto"));
+    s.presetOffset = s.autoPreset ? 1 : 0;
+    if(s.presetOffset) preset.choices.push_back(tr(L"OwnedPresetAuto"));
     for (int i = 0; i < 5; i++)
         preset.choices.push_back(tr(L"OwnedPreset" + std::to_wstring(i)));
     s.rows.push_back(preset);
@@ -529,10 +565,21 @@ static void buildSettings(Settings &s)
         r.option = &o;
         r.category = o.category;
         r.type = o.type;
-        r.initial = r.value = s.renderer->get(L"graphics", o.key, raw(o, o.initial));
+        S fallback = o.type == 3 ? S(o.textDefault) : raw(o, o.initial);
+        if (S(o.key) == L"upscaler" || S(o.key) == L"upscaler_quality")
+        {
+            int legacy = _wtoi(s.renderer->get(L"graphics", L"dlss_mode").c_str());
+            if (legacy>=1 && legacy<=10) fallback = S(o.key)==L"upscaler" ? (legacy<=5?L"1":L"2") : std::to_wstring((legacy-1)%5);
+        }
+        r.initial = r.value = s.renderer->get(L"graphics", o.key, fallback);
+        if (interfaceKey(o))
+        {
+            if (s.hud->had) r.initial = r.value = s.hud->getAny(o.key, r.initial);
+            else s.hud->set(L"interface", o.key, r.initial);
+        }
         r.minimum = o.minimum;
         r.locked = !s.rendererAvailable;
-        r.choices = o.type == 0 ? std::vector<S>{tr(L"Off"), tr(L"On")} : o.choices;
+        r.choices = o.type == 0 ? std::vector<S>{tr(L"Off"), tr(L"On")} : (language == 2 && !o.russianChoices.empty() ? o.russianChoices : o.choices);
         s.rows.push_back(r);
     }
     for (auto spec : std::vector<std::pair<S, S>>{{L"cbMPConsoleSupport", L"MP console"},
@@ -541,7 +588,7 @@ static void buildSettings(Settings &s)
         addProfileSetting(s, 1, tr(spec.first), L"Settings", spec.second, 1, true);
     cameraRows(s);
     s.expanded.resize(s.groupTitles.size(), false);
-    s.expanded[0] = true;
+    s.expanded[0] = s.expanded[10] = true;
     for (auto spec : std::vector<std::pair<S, S>>{{L"lbPathCD", L"CD-ROM Path"},
                                                   {L"lbPathRes", L"Resources Path"},
                                                   {L"lbPathGameWorkdir", L"Work Path"}})
@@ -555,10 +602,11 @@ static void buildSettings(Settings &s)
     exe.page = 3;
     exe.key = L"$exe";
     exe.label = tr(L"lbEXEName");
-    exe.initial = exe.value = L"Engine\\EIRebuild.exe";
+    exe.initial = exe.value = L"EIRebuild64.exe";
     exe.locked = true;
     s.rows.push_back(exe);
     s.updating = true;
+    for(auto &r:s.rows) r.knownChoices=(int)r.choices.size();
     rowFields(s);
     syncPreset(s);
     s.updating = false;
@@ -568,25 +616,28 @@ static void buildSettings(Settings &s)
         addBlock(s, page, 0, tr(tabs[page]));
         if (page == 0)
         {
-            addBlock(s, 0, 1, tr(L"GameSettingsHeading"));
-            addBlock(s, 0, 2, tr(L"GameEngineHint"));
-            addBlock(s, 0, 5, tr(L"GameManagedAdapter"));
-            addBlock(s, 0, 2, tr(L"GameSettingsDefaults"));
-            addBlock(s, 0, 3, L"", 0);
-            addBlock(s, 0, 3, L"", 1);
             addBlock(s, 0, 1, tr(L"OwnedRendererHeading"));
             addBlock(s, 0, 2, tr(L"OwnedRendererF10Hint"));
             if (s.rendererAvailable)
             {
-                addBlock(s, 0, 3, L"", 2);
+                addBlock(s, 0, 3, L"", 1);
+                addBlock(s, 0, 3, L"", 0);
+                addBlock(s, 0, 2, text(L"HUD profile: ", L"Профиль HUD: ") + s.hudName + text(L". Manage profiles and drag widgets in F10.", L". Управление профилями и перемещение панелей — в F10."));
                 addBlock(s, 0, 2, tr(L"OwnedPresetNote"));
                 addBlock(s, 0, 2, tr(L"OwnedFirstRunNote"));
             }
             else
-                addBlock(s, 0, 2, tr(L"OwnedRendererUnavailable"));
+                addBlock(s, 0, 2, tr(L"OwnedRendererUnavailable") + L" " + s.rendererError);
         }
+        std::vector<int> order;
+        if (page == 0)
+        {
+            for (int category : {0,1,2,3,4,5,6,7,9,8,11,12})
+                for (int i=0;i<(int)s.rows.size();++i) if(s.rows[i].category==category) order.push_back(i);
+        }
+        else for(int i=0;i<(int)s.rows.size();++i) order.push_back(i);
         int previous = -1;
-        for (int i = 0; i < (int)s.rows.size(); i++)
+        for (int i : order)
         {
             auto &r = s.rows[i];
             if (r.page != page || (page == 0 && (!r.option || !s.rendererAvailable)))
@@ -594,6 +645,7 @@ static void buildSettings(Settings &s)
             if (r.category >= 0 && previous != r.category)
                 addBlock(s, page, 4, s.groupTitles[r.category], -1, r.category);
             addBlock(s, page, 3, L"", i, r.category);
+            if(r.key==L"upscaler") addBlock(s,0,2,L"DLSS:");
             previous = r.category;
         }
         if (page == 3)
@@ -606,6 +658,58 @@ static void locate(HWND w, int x, int y, int width, int height)
                  SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOREDRAW | SWP_NOCOPYBITS);
 }
 static void layoutSettings(Settings &s);
+static void availability(Settings &s)
+{
+    auto value=[&](const S &key) {
+        for(auto &r:s.rows) if(r.key==key) {
+            try { return parsed(*r.option,r.edit?windowText(r.edit):r.value); } catch(...) { return r.option->initial; }
+        }
+        return 0.0;
+    };
+    for(auto &r:s.rows)
+    {
+        if(!r.option) continue;
+        S key=r.key; bool enabled=!r.locked;
+        if(key==L"upscaler_quality" || key==L"upscale_sharpness") enabled &= value(L"upscaler")!=0 && !(value(L"upscaler")==1 && nvidia.load()!=1);
+        if(key==L"render_scale" || key==L"smaa") enabled &= value(L"upscaler")==0;
+        if(key==L"water_reflections" || key==L"water_reflection_quality" || key==L"water_physical") enabled &= value(L"water_simple")==0 && (key==L"water_reflections" || value(L"water_reflections")!=0);
+        if(key==L"shadow_cascade_quality" || key==L"shadow_close_cascades" || key==L"shadow_far") enabled &= value(L"shadows")!=0;
+        if(key==L"point_shadow_quality") enabled &= value(L"point_shadows")!=0;
+        if(key==L"shadow_softness") enabled &= value(L"shadows")!=0 || value(L"point_shadows")!=0;
+        if(key==L"terrain_cliffs") enabled &= value(L"terrain_blend")!=0;
+        if(key==L"neighbour_fog_range") enabled &= value(L"neighbour_maps")!=0;
+        if(key==L"ground_cover_distance") enabled &= value(L"ground_cover")!=0;
+        if(key==L"fog_volume_quality") enabled &= value(L"fog_preset")>=2;
+        if(key==L"fog_strength") enabled &= value(L"fog_preset")!=0;
+        if(key==L"depth_of_field_strength") enabled &= value(L"depth_of_field")!=0;
+        auto at=key.find(L"_fade_transparency"); if(at!=S::npos) enabled &= value(key.substr(0,at)+L"_auto_fade")!=0;
+        if(key.find(L"critter_")==0 && key.size()>7 && key.substr(key.size()-7)==L"_weight") enabled &= value(key.substr(0,key.size()-7))!=0;
+        if(key==L"combat_plate_alt" || key==L"combat_plate_paused") enabled &= value(L"combat_plate_combat")==0;
+        if(r.host) EnableWindow(r.host,enabled);
+        if(r.edit) EnableWindow(r.edit,enabled);
+        if(r.drop) EnableWindow(r.drop,enabled);
+        if(r.standards)
+        {
+            EnableWindow(r.standards,enabled);
+            S raw=windowText(r.edit); int selected=(int)r.standardValues.size();
+            for(int i=0;i<(int)r.standardValues.size();++i) if(raw==std::to_wstring(r.standardValues[i])) selected=i;
+            SendMessageW(r.standards,CB_SETCURSEL,selected,0);
+        }
+        for(size_t i=0;i<r.buttons.size();++i) EnableWindow(r.buttons[i],enabled && !(key==L"upscaler" && i==1 && nvidia.load()!=1));
+        if(key==L"upscaler_quality" && r.buttons.size()>4)
+            SetWindowTextW(r.buttons[4],value(L"upscaler")==1?L"DLAA":text(L"Native AA",L"Сглаживание (полное разрешение)").c_str());
+    }
+    int state=nvidia.load();
+    if(s.adapterState!=state)
+    {
+        s.adapterState=state;
+        for(auto &block:s.blocks) if(block.kind==2 && block.text.find(L"DLSS:")==0)
+        {
+            block.text = state==0 ? text(L"DLSS: checking NVIDIA adapter…",L"DLSS: проверка адаптера NVIDIA…") : state==1 ? text(L"DLSS: NVIDIA detected. The game checks support.",L"DLSS: NVIDIA обнаружена. Поддержку проверит игра.") : state==2 ? text(L"DLSS: no NVIDIA adapter detected.",L"DLSS: адаптер NVIDIA не обнаружен.") : text(L"DLSS: DXGI enumeration failed.",L"DLSS: не удалось получить список адаптеров DXGI.");
+            SetWindowTextW(block.window,block.text.c_str());
+        }
+    }
+}
 static void scrollSettings(Settings &s)
 {
     RECT r;
@@ -655,7 +759,7 @@ static void layoutSettings(Settings &s)
     int pageWidth = MulDiv(view.right, 96, dpi), inner = std::max(100, pageWidth - 28), y = 8;
     for (auto &r : s.rows)
     {
-        for (auto w : {r.labelWindow, r.host, r.drop})
+        for (auto w : {r.labelWindow, r.host, r.drop, r.standards})
             if (w)
                 ShowWindow(w, SW_HIDE);
         for (auto w : r.buttons)
@@ -728,6 +832,7 @@ static void layoutSettings(Settings &s)
         if (b.group >= 0 && !s.expanded[b.group])
             continue;
         auto &r = s.rows[b.row];
+        if(!r.labelWindow) continue;
         int indent = b.group >= 0 ? 12 : 0, available = inner - indent, label = available * 36 / 100;
         int x = 14 + indent + label, area = available - label,
             lh = measured(r.label, font, std::max(1, label - 16), true), rh = 0;
@@ -742,11 +847,14 @@ static void layoutSettings(Settings &s)
         else if (r.host)
         {
             int entryHeight = measured(L"Ag", font, 200, true),
-                entryWidth = area - (r.path && !r.locked ? 48 : 0);
+                entryWidth = area - (r.path && !r.locked ? 48 : (r.option && r.option->type != 3 ? 80 : 0));
             locate(r.host, x, y, entryWidth, entryHeight + 20);
             locate(r.edit, 12, 10, entryWidth - 24, entryHeight);
             ShowWindow(r.host, SW_SHOW);
             rh = entryHeight + 20;
+            if(r.standards) { locate(r.standards,x,y+rh+6,area,240); ShowWindow(r.standards,SW_SHOW); rh+=42; }
+            if(r.option && r.option->type != 3)
+                for(int j=0;j<2;++j) { locate(r.buttons[j],x+entryWidth+4+j*38,y,34,36); ShowWindow(r.buttons[j],SW_SHOW); }
             if (r.path && !r.locked)
             {
                 locate(r.buttons[0], x + entryWidth + 8, y, 40, 40);
@@ -787,6 +895,7 @@ static void layoutSettings(Settings &s)
     SendMessageW(s.viewport, WM_SETREDRAW, TRUE, 0);
     scrollSettings(s);
     s.layoutDepth--;
+    availability(s);
     RedrawWindow(s.window, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 static void revealSetting(HWND window)
@@ -810,18 +919,19 @@ static void preset(Settings &s, int index)
 {
     if (!s.rendererAvailable || index < 0 || index > 5)
         return;
+    if(index-s.presetOffset==4) return;
     s.updating = true;
-    s.autoPreset = index == 0;
+    s.autoPreset = s.presetOffset && index == 0;
     s.confirmPreset = !s.autoPreset;
     if (s.autoPreset)
     {
         for (auto &r : s.rows)
-            if (r.option && !r.option->presets.empty())
+            if (r.option)
             {
                 r.value = r.initial;
                 if (r.edit)
                     SetWindowTextW(r.edit, r.value.c_str());
-                else
+                else if(!r.choices.empty())
                 {
                     int initialIndex = -1;
                     try
@@ -839,7 +949,7 @@ static void preset(Settings &s, int index)
     }
     else
     {
-        int p = index - 1;
+        int p = index - s.presetOffset;
         if (p >= 0 && p < 4)
         {
             for (auto &r : s.rows)
@@ -872,6 +982,7 @@ static void validateCamera(Settings &, const Map<double> &numbers, const std::se
             fail(tr(L"InvalidCameraRange"));
     };
     pair(L"NearClipDistance", L"FarClipDistance");
+    if((changed.count(L"NearClipDistance") || changed.count(L"FarClipDistance")) && numbers.at(L"NearClipDistance")>=numbers.at(L"FarClipDistance")) fail(tr(L"InvalidCameraRange"));
     if (changed.count(L"NearClipDistance") && numbers.at(L"NearClipDistance") <= 0)
         fail(tr(L"InvalidCameraRange"));
     for (auto spec : std::vector<std::pair<S, bool>>{{L"Camera{0}Height", true},
@@ -897,7 +1008,8 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
     Values changes;
     Map<double> camera;
     std::set<S, Less> changedCamera;
-    Ini next = *s.renderer;
+    Ini next = *s.renderer, hudNext = *s.hud;
+    bool hudChanged = false;
     bool graphicsChanged = false;
     for (auto &r : s.rows)
     {
@@ -930,6 +1042,12 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
             continue;
         if (r.option)
         {
+            if (r.option->type == 3)
+            {
+                if (value.size()>1023 || std::any_of(value.begin(),value.end(),[](wchar_t c){return c==0 || c==L'\r' || c==L'\n' || c>255;})) fail(tr(L"OwnedRendererInvalid"));
+                next.set(L"graphics", r.key, value);
+                continue;
+            }
             double n = parsed(*r.option, value);
             bool same = false;
             try
@@ -942,6 +1060,7 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
             if (same)
                 continue;
             next.set(L"graphics", r.key, raw(*r.option, n));
+            if(interfaceKey(*r.option)) { hudNext.setAny(r.key, raw(*r.option,n)); hudChanged=true; }
             if (!r.option->presets.empty())
                 graphicsChanged = true;
             continue;
@@ -984,20 +1103,43 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
         }
         changes[v.id()] = v;
     }
+    if(!pathsOnly)
+    {
+        const Row *w=nullptr,*h=nullptr;
+        for(auto &r:s.rows) { if(r.key==L"window_width") w=&r; if(r.key==L"window_height") h=&r; }
+        if(w && h)
+        {
+            S width=w->edit?windowText(w->edit):w->value, height=h->edit?windowText(h->edit):h->value;
+            if(width!=w->initial || height!=h->initial)
+                if((parsed(*w->option,width)==0)!=(parsed(*h->option,height)==0)) fail(tr(L"OwnedWindowPair"));
+        }
+    }
     validateCamera(s, camera, changedCamera);
     if (!pathsOnly && s.rendererAvailable)
     {
         // Auto uses the renderer's existing one-time GPU setup; the renderer
         // sets this back to true only after the player confirms its suggestion.
-        if (s.autoPreset)
-            next.set(L"setup", L"first_run_done", L"false");
-        else if (s.confirmPreset || graphicsChanged)
+        if (!s.autoPreset && (s.confirmPreset || graphicsChanged))
             next.set(L"setup", L"first_run_done", L"true");
     }
     if (!pathsOnly && (s.confirmPreset || graphicsChanged || next.content != s.renderer->content) &&
         !s.rendererAvailable)
         fail(tr(L"OwnedRendererUnavailable"));
-    next.save([&] { s.launcher.save([&] { commitProfile(s.baseline, changes); }); });
+    auto save = [&] { next.save([&] { s.launcher.save([&] { commitProfile(s.baseline, changes); }); }); };
+    if (hudChanged)
+    {
+        S config = join(root,L"Config64"), folder = join(config,L"rddraw_profiles");
+        if (!directory(config) && !CreateDirectoryW(config.c_str(),nullptr)) check(GetLastError(),config);
+        if (!directory(folder) && !CreateDirectoryW(folder.c_str(),nullptr)) check(GetLastError(),folder);
+        hudNext.save(save);
+    }
+    else if (next.content != s.renderer->content)
+    {
+        S config = join(root,L"Config64");
+        if (!directory(config) && !CreateDirectoryW(config.c_str(),nullptr)) check(GetLastError(),config);
+        save();
+    }
+    else save();
     if (pathsOnly)
         for (auto &r : s.rows)
             if (r.page == 3)
@@ -1066,9 +1208,26 @@ static void handleSettingCommand(Settings &s, int id, int code)
 {
     if (s.updating)
         return;
+    if(id>=25000 && id<25000+(int)s.rows.size() && code==CBN_SELCHANGE)
+    {
+        auto &r=s.rows[id-25000];
+        int choice=(int)SendMessageW(r.standards,CB_GETCURSEL,0,0);
+        if(choice>=0 && choice<(int)r.standardValues.size()) SetWindowTextW(r.edit,std::to_wstring(r.standardValues[choice]).c_str());
+        return;
+    }
+    if(id>=20000 && id<20000+(int)s.rows.size()*2)
+    {
+        auto &r=s.rows[(id-20000)/2];
+        double n=r.option->initial;
+        try { n=parsed(*r.option,windowText(r.edit)); } catch(...) {}
+        n=std::clamp(n+((id-20000)%2?1:-1)*r.option->step,r.option->minimum,r.option->maximum);
+        SetWindowTextW(r.edit,raw(*r.option,n).c_str());
+        availability(s); return;
+    }
     if (id >= 210 && id < 214)
     {
         s.page = id - 210;
+        rowFields(s,s.page);
         s.scroll = 0;
         layoutSettings(s);
         return;
@@ -1076,12 +1235,13 @@ static void handleSettingCommand(Settings &s, int id, int code)
     if (id >= 500 && id < 500 + (int)s.groupTitles.size())
     {
         s.expanded[id - 500] = !s.expanded[id - 500];
+        rowFields(s,s.page);
         layoutSettings(s);
         return;
     }
-    if (id >= 6000 && id < 6000 + (int)s.rows.size())
+    if (id >= 16000 && id < 16000 + (int)s.rows.size())
     {
-        chooseFolder(s.rows[id - 6000]);
+        chooseFolder(s.rows[id - 16000]);
         return;
     }
     if (id >= 1000 && id < 1000 + (int)s.rows.size())
@@ -1091,12 +1251,13 @@ static void handleSettingCommand(Settings &s, int id, int code)
             auto &r = s.rows[id - 1000];
             if (r.option)
                 syncPreset(s, !r.option->presets.empty());
+            availability(s);
         }
         return;
     }
-    if (id >= 3000 && id < 3000 + (int)s.rows.size() * 8)
+    if (id >= 5000 && id < 5000 + (int)s.rows.size() * 16)
     {
-        int i = (id - 3000) / 8, j = (id - 3000) % 8;
+        int i = (id - 5000) / 16, j = (id - 5000) % 16;
         auto &r = s.rows[i];
         if (r.toggle)
         {
@@ -1113,6 +1274,7 @@ static void handleSettingCommand(Settings &s, int id, int code)
         select(r, j);
         if (r.option)
             syncPreset(s, !r.option->presets.empty());
+        availability(s);
         return;
     }
     if (id == 201)
@@ -1241,6 +1403,9 @@ static LRESULT CALLBACK settingsProc(HWND w, UINT m, WPARAM a, LPARAM b)
     auto *s = currentSettings;
     switch (m)
     {
+    case WM_TIMER:
+        if(s && s->adapterState!=nvidia.load()) availability(*s);
+        return 0;
     case WM_GETMINMAXINFO:
         ((MINMAXINFO *)b)->ptMinTrackSize = {px(820), px(550)};
         return 0;
@@ -1286,7 +1451,7 @@ static void options()
     currentSettings = &s;
     try
     {
-        s.window = modalWindow(L"ReStarter.Native.Settings", L"ReStarter — " + tr(L"Settings"), 900, 650,
+        s.window = modalWindow(L"ReStarter.Native.Settings", L"ReStarter64 — " + tr(L"Settings"), 900, 650,
                                mainWindow);
         // Buffer the viewport and its native children together, including edits
         // and labels. Per-control buffering alone cannot make scrolling atomic.
@@ -1313,6 +1478,7 @@ static void options()
         ensureVisible = revealSetting;
         EnableWindow(mainWindow, FALSE);
         titleTheme(s.window);
+        SetTimer(s.window,1,200,nullptr);
         ShowWindow(s.window, SW_SHOW);
         SetFocus(s.nav[0]);
         MSG msg;

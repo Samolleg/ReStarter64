@@ -12,7 +12,6 @@ namespace ei
 {
 S root;
 int language = 2;
-static const S regRoot = L"Software\\Gipat.ru\\EI_Starter";
 S text(const wchar_t *en, const wchar_t *ru)
 {
     return language == 2 ? ru : en;
@@ -116,8 +115,7 @@ void atomicFile(const S &p, const Bytes &b)
         }
         if (exists(p))
         {
-            S backup = p + L".native-backup";
-            if (!ReplaceFileW(p.c_str(), tmp.c_str(), backup.c_str(), 0, nullptr, nullptr))
+            if (!ReplaceFileW(p.c_str(), tmp.c_str(), nullptr, 0, nullptr, nullptr))
                 check(GetLastError(), p);
         }
         else if (!MoveFileExW(tmp.c_str(), p.c_str(), MOVEFILE_WRITE_THROUGH))
@@ -185,11 +183,11 @@ double numeric(S s)
 }
 S setting(const S &k, const S &d)
 {
-    return Ini(join(root, L"restarter.config")).get(L"Settings", k, d);
+    return Ini(join(root, L"restarter64.config")).get(L"Settings", k, d);
 }
 void settings(const Map<S> &edits)
 {
-    Ini ini(join(root, L"restarter.config"));
+    Ini ini(join(root, L"restarter64.config"));
     for (auto &e : edits)
         ini.set(L"Settings", e.first, e.second);
     ini.save([] {});
@@ -281,82 +279,6 @@ S valueText(const Value &v)
     }
     return L"";
 }
-namespace legacy
-{
-struct Key
-{
-    HKEY h = nullptr;
-    ~Key()
-    {
-        if (h)
-            RegCloseKey(h);
-    }
-};
-static Value readValue(const S &s, const S &n)
-{
-    Value v{s, n};
-    Key k;
-    LONG e = RegOpenKeyExW(HKEY_CURRENT_USER, (regRoot + (s.empty() ? L"" : L"\\" + s)).c_str(), 0,
-                           KEY_READ | KEY_WOW64_32KEY, &k.h);
-    if (e == ERROR_FILE_NOT_FOUND)
-        return v;
-    check(e, s);
-    DWORD size = 0;
-    e = RegQueryValueExW(k.h, n.c_str(), nullptr, &v.kind, nullptr, &size);
-    if (e == ERROR_FILE_NOT_FOUND)
-        return v;
-    check(e, n);
-    if (size > 1024 * 1024)
-        fail(L"Registry value too large: " + n);
-    v.bytes.resize(size);
-    check(RegQueryValueExW(k.h, n.c_str(), nullptr, &v.kind, v.bytes.data(), &size), n);
-    v.bytes.resize(size);
-    v.present = true;
-    return v;
-}
-static Values readValues()
-{
-    Values out;
-    std::function<void(S)> walk = [&](S s) {
-        Key k;
-        LONG e =
-            RegOpenKeyExW(HKEY_CURRENT_USER, join(regRoot, s).c_str(), 0, KEY_READ | KEY_WOW64_32KEY, &k.h);
-        if (e == ERROR_FILE_NOT_FOUND)
-            return;
-        check(e, s);
-        for (DWORD i = 0;; i++)
-        {
-            wchar_t n[16384];
-            DWORD len = 16384;
-            e = RegEnumValueW(k.h, i, n, &len, nullptr, nullptr, nullptr, nullptr);
-            if (e == ERROR_NO_MORE_ITEMS)
-                break;
-            check(e, s);
-            auto v = readValue(s, n);
-            out[v.id()] = v;
-        }
-        for (DWORD i = 0;; i++)
-        {
-            wchar_t n[256];
-            DWORD len = 256;
-            e = RegEnumKeyExW(k.h, i, n, &len, nullptr, nullptr, nullptr, nullptr);
-            if (e == ERROR_NO_MORE_ITEMS)
-                break;
-            check(e, s);
-            walk(join(s, n));
-        }
-    };
-    walk(L"EvilIslands");
-    walk(L"Settings");
-    for (auto n : {L"Path", L"AddonPath"})
-    {
-        auto v = readValue(L"", n);
-        if (v.present)
-            out[v.id()] = v;
-    }
-    return out;
-}
-} // namespace legacy
 static S escape(S s)
 {
     S o;
@@ -571,7 +493,7 @@ static Bytes embeddedDefaultProfile()
 }
 Values loadDefaultProfile()
 {
-    const S path = join(root, L"restarter-defaults.xml");
+    const S path = join(root, L"restarter64-defaults.xml");
     return exists(path) ? loadProfile(path)
                         : loadProfileBytes(embeddedDefaultProfile(), L"embedded ReStarter defaults");
 }
@@ -645,19 +567,30 @@ std::vector<S> resolutions()
         r.push_back(std::to_wstring(m.first) + L"x" + std::to_wstring(m.second));
     return r;
 }
+S executable()
+{
+    S selected = setting(L"ExecutablePath", L"Engine64\\EIRebuild64.exe");
+    bool absolute = selected.size() > 1 && (selected[1] == L':' || selected[0] == L'\\');
+    S path = full(absolute ? selected : join(root, selected));
+    S parent = path.substr(0, path.find_last_of(L"\\/"));
+    if (lower(path.substr(path.find_last_of(L"\\/") + 1)) != L"eirebuild64.exe" ||
+        lower(parent) == lower(join(root, L"Engine")))
+        fail(L"Use a separate EIRebuild64.exe directory (default: Engine64).");
+    return path;
+}
 void Game::start(const Mod &mod)
 {
-    if (gameRunning(L"EIRebuild.exe"))
+    if (gameRunning(L"EIRebuild64.exe"))
         fail(text(L"Close EIRebuild before starting it again.", L"Сначала закройте запущенный EIRebuild."));
-    const S engine = join(root, L"Engine"), path = join(engine, L"EIRebuild.exe");
+    const S path = executable(), engine = path.substr(0, path.find_last_of(L"\\"));
     if (!exists(path))
         fail(L"EIRebuild executable is missing: " + path);
     if (!directory(mod.path) ||
-        (!exists(join(mod.path, L"config.reg")) && !exists(join(mod.path, L"mod.config"))))
+        !exists(join(mod.path, L"config.reg")))
         fail(tr(L"NoMods"));
     selectMod(mod);
     loadProfile(profilePath());
-    S command = L"\"" + path + L"\" -profile \"" + profilePath() + L"\"";
+    S command = L"\"" + path + L"\" -profile \"" + profilePath() + L"\" --mod \"" + mod.path + L"\"";
     std::vector<wchar_t> arguments(command.begin(), command.end());
     arguments.push_back(0);
     STARTUPINFOW startup{};
@@ -721,15 +654,17 @@ static std::string header(std::string s)
 }
 Ini::Ini(S p) : path(std::move(p))
 {
+    renderer = lower(path).find(L"rddraw") != S::npos;
     had = exists(path);
     if (had)
         original = readFile(path);
     if ((original.size() < 2 || original[0] != 255 || original[1] != 254) &&
         std::find(original.begin(), original.end(), 0) != original.end())
         fail(L"Unsupported INI encoding: " + path);
-    if (lower(path).find(L"rddraw.ini") != S::npos &&
+    if (renderer &&
         std::find(original.begin(), original.end(), 0) != original.end())
         fail(L"Unsupported renderer INI encoding: " + path);
+    if(renderer && original.size()>1024*1024) fail(L"Renderer INI is too large");
     utf16 = original.size() >= 2 && original[0] == 255 && original[1] == 254;
     if (utf16)
     {
@@ -744,6 +679,16 @@ Ini::Ini(S p) : path(std::move(p))
         newline = "\n";
     else if (content.find('\r') != content.npos)
         newline = "\r";
+}
+static S decodeCodepage(const std::string &s,UINT cp)
+{
+    int n=MultiByteToWideChar(cp,0,s.data(),(int)s.size(),nullptr,0);
+    S out(n,L'\0'); if(n) MultiByteToWideChar(cp,0,s.data(),(int)s.size(),out.data(),n); return out;
+}
+static std::string encodeCodepage(const S &s,UINT cp)
+{
+    int n=WideCharToMultiByte(cp,0,s.data(),(int)s.size(),nullptr,0,nullptr,nullptr);
+    std::string out(n,'\0'); if(n) WideCharToMultiByte(cp,0,s.data(),(int)s.size(),out.data(),n,nullptr,nullptr); return out;
 }
 S Ini::get(const S &sec, const S &key, const S &def) const
 {
@@ -764,7 +709,7 @@ S Ini::get(const S &sec, const S &key, const S &def) const
         if (e != s.npos && low(strip(l.s.substr(0, e))) == name)
         {
             auto v = strip(l.s.substr(e + 1));
-            return decode(Bytes(v.begin(), v.end()));
+            return renderer && lower(key)==L"interface_profile" ? decode(Bytes(v.begin(),v.end())) : decodeCodepage(v,utf16?CP_UTF8:renderer?28591:CP_ACP);
         }
     }
     return def;
@@ -800,16 +745,40 @@ void Ini::set(const S &sec, const S &key, const S &value)
             a++;
         size_t b = l.s.find_last_not_of(" \t");
         b = b == l.s.npos || b < a ? a : b + 1;
-        content.replace(l.start + a, b - a, narrow(value));
+        content.replace(l.start + a, b - a, encodeCodepage(value,utf16?CP_UTF8:renderer?28591:CP_ACP));
         return;
     }
     std::string insert;
     if (!found)
         insert = "[" + narrow(sec) + "]" + newline;
-    insert += narrow(key) + "=" + narrow(value) + newline;
+    insert += narrow(key) + "=" + encodeCodepage(value,utf16?CP_UTF8:renderer?28591:CP_ACP) + newline;
     if (end && content[end - 1] != '\n' && content[end - 1] != '\r')
         insert = newline + insert;
     content.insert(end, insert);
+}
+S Ini::getAny(const S &key, const S &def) const
+{
+    for (const auto &l : lines(content))
+    {
+        auto t=strip(l.s); auto e=t.find('=');
+        if(t.empty() || t[0]==';' || t[0]=='#' || e==t.npos) continue;
+        if(low(strip(t.substr(0,e)))==narrow(lower(key)))
+        { auto v=strip(t.substr(e+1)); return decodeCodepage(v,renderer?28591:CP_ACP); }
+    }
+    return def;
+}
+void Ini::setAny(const S &key, const S &value)
+{
+    for(const auto &l:lines(content))
+    {
+        auto t=strip(l.s); auto e=l.s.find('=');
+        if(t.empty() || t[0]==';' || t[0]=='#' || e==l.s.npos) continue;
+        if(low(strip(l.s.substr(0,e)))!=narrow(lower(key))) continue;
+        size_t a=e+1; while(a<l.s.size() && (l.s[a]==' ' || l.s[a]=='\t')) ++a;
+        size_t b=l.s.find_last_not_of(" \t"); b=b==l.s.npos||b<a?a:b+1;
+        content.replace(l.start+a,b-a,encodeCodepage(value,renderer?28591:CP_ACP)); return;
+    }
+    set(L"interface",key,value);
 }
 void Ini::validate() const
 {
@@ -817,6 +786,9 @@ void Ini::validate() const
     std::set<std::string> known;
     for (auto &option : schema())
         known.insert(narrow(option.key));
+    bool hud=lower(path).find(L"rddraw_profiles")!=S::npos;
+    std::set<std::string> hudKeys;
+    for(auto &o:schema()) if(o.category==11 || (o.category==8 && S(o.key)!=L"confine_cursor" && S(o.key).find(L"highlight_")!=0)) hudKeys.insert(narrow(o.key));
     std::string current;
     for (auto &l : lines(content))
     {
@@ -833,10 +805,10 @@ void Ini::validate() const
         if (s.empty() || s[0] == ';' || s[0] == '#' || e == s.npos)
             continue;
         auto name = low(strip(s.substr(0, e)));
-        if (!((current == "graphics" && known.count(name)) ||
+        if (!((hud ? hudKeys.count(name)!=0 : current == "graphics" && known.count(name)) ||
               (current == "setup" && name == "first_run_done")))
             continue;
-        auto id = current + "\n" + name;
+        auto id = (hud && hudKeys.count(name) ? std::string("interface") : current) + "\n" + name;
         if (!keys.insert(id).second)
             fail(L"Duplicate INI key: " + path);
     }
@@ -925,7 +897,7 @@ std::vector<Mod> mods()
                 auto str = [&](size_t p, size_t n, UINT cp) {
                     if (p + n > b.size())
                         fail(L"Invalid config.reg: " + reg);
-                    return decode(Bytes(b.begin() + p, b.begin() + p + n), cp);
+                    return decodeCodepage(std::string(b.begin()+p,b.begin()+p+n),cp);
                 };
                 if (u32(0) != 0x45AB3EFB)
                     fail(L"Invalid config.reg signature: " + reg);

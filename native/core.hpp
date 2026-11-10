@@ -39,6 +39,7 @@ S decode(const Bytes &bytes, UINT fallback = 1251);
 Bytes utf8(const S &s);
 S trim(S s);
 S lower(S s);
+S executable();
 S setting(const S &key, const S &def = L"");
 void settings(const Map<S> &changes);
 S number(double v);
@@ -95,17 +96,21 @@ struct Option
     std::vector<double> presets;
     std::vector<S> choices;
     const wchar_t *english, *russian;
+    std::vector<S> russianChoices;
+    const wchar_t *textDefault = L"";
 };
 const std::vector<Option> &schema();
 struct Ini
 {
     S path;
     Bytes original;
-    bool had = false, utf16 = false;
+    bool had = false, utf16 = false, renderer = false;
     std::string content, newline = "\r\n";
     explicit Ini(S p);
     S get(const S &section, const S &key, const S &def = L"") const;
     void set(const S &section, const S &key, const S &value);
+    S getAny(const S &key, const S &def) const;
+    void setAny(const S &key, const S &value);
     void validate() const;
     void save(const std::function<void()> &other);
 };
