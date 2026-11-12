@@ -308,7 +308,7 @@ static void rowFields(Settings &s, int onlyPage = 0)
         if(r.labelWindow || r.page!=onlyPage || (onlyPage==0 && r.category>=0 && !s.expanded[r.category])) continue;
         r.knownChoices = (int)r.choices.size();
         r.labelWindow = control(s.canvas, L"STATIC", r.label, 0, SS_LEFT | SS_NOPREFIX);
-        if (r.key == L"videoresolution")
+        if (r.key == L"$resolution")
         {
             r.drop =
                 control(s.canvas, L"COMBOBOX", L"", 1000 + index,
@@ -557,8 +557,22 @@ static void buildSettings(Settings &s)
     for (int i = 0; i < 5; i++)
         preset.choices.push_back(tr(L"OwnedPreset" + std::to_wstring(i)));
     s.rows.push_back(preset);
+    Row resolution;
+    resolution.key = L"$resolution";
+    resolution.label = text(L"Screen resolution", L"Разрешение экрана");
+    resolution.category = 0;
+    resolution.tip = text(L"Window size. Borderless fullscreen uses the monitor resolution.", L"Размер окна. Полный экран без рамки использует разрешение монитора.");
+    resolution.locked = !s.rendererAvailable;
+    resolution.choices = {text(L"Automatic (monitor)", L"Автоматически (по монитору)")};
+    for (const auto &mode : resolutions()) resolution.choices.push_back(mode);
+    S width = s.renderer->get(L"graphics", L"window_width", L"0");
+    S height = s.renderer->get(L"graphics", L"window_height", L"0");
+    resolution.initial = resolution.value = width == L"0" && height == L"0"
+        ? resolution.choices[0] : width + L"x" + height;
+    s.rows.push_back(resolution);
     for (auto &o : schema())
     {
+        if (S(o.key) == L"window_width" || S(o.key) == L"window_height") continue;
         Row r;
         r.label = language == 2 ? o.russian : o.english;
         r.key = o.key;
@@ -620,7 +634,7 @@ static void buildSettings(Settings &s)
             addBlock(s, 0, 2, tr(L"OwnedRendererF10Hint"));
             if (s.rendererAvailable)
             {
-                addBlock(s, 0, 3, L"", 1);
+                addBlock(s, 0, 3, L"", 2);
                 addBlock(s, 0, 3, L"", 0);
                 addBlock(s, 0, 2, text(L"HUD profile: ", L"Профиль HUD: ") + s.hudName + text(L". Manage profiles and drag widgets in F10.", L". Управление профилями и перемещение панелей — в F10."));
                 addBlock(s, 0, 2, tr(L"OwnedPresetNote"));
@@ -640,7 +654,7 @@ static void buildSettings(Settings &s)
         for (int i : order)
         {
             auto &r = s.rows[i];
-            if (r.page != page || (page == 0 && (!r.option || !s.rendererAvailable)))
+            if (r.page != page || (page == 0 && ((!r.option && r.key != L"$resolution") || !s.rendererAvailable)))
                 continue;
             if (r.category >= 0 && previous != r.category)
                 addBlock(s, page, 4, s.groupTitles[r.category], -1, r.category);
@@ -1040,6 +1054,18 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
         }
         if (value == r.initial || r.locked)
             continue;
+        if (r.key == L"$resolution")
+        {
+            unsigned width = 0, height = 0;
+            wchar_t tail = 0;
+            if (value != r.choices[0] &&
+                (swscanf_s(value.c_str(), L"%ux%u%c", &width, &height, &tail, 1) != 2 ||
+                 width < 640 || height < 480 || width > 16384 || height > 16384))
+                fail(tr(L"InvalidResolution"));
+            next.set(L"graphics", L"window_width", std::to_wstring(width));
+            next.set(L"graphics", L"window_height", std::to_wstring(height));
+            continue;
+        }
         if (r.option)
         {
             if (r.option->type == 3)
