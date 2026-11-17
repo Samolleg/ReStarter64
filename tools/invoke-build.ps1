@@ -1,3 +1,5 @@
+#requires -Version 7.6.10
+#requires -PSEdition Core
 # Resolve the canonical project tools from either main or a task worktree.
 # No param block: preserve native dash-prefixed arguments.
 $ErrorActionPreference = 'Stop'

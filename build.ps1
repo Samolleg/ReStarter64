@@ -1,3 +1,5 @@
+#requires -Version 7.6.10
+#requires -PSEdition Core
 param([ValidateSet("Release", "Release64")][string]$Configuration = "Release")
 $ErrorActionPreference = 'Stop'
 $locator = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
