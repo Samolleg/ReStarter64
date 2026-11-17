@@ -14,4 +14,8 @@ $rows = foreach ($m in [regex]::Matches($source,$pattern)) {
 $expected = [regex]::Matches($source,'new OwnedRendererOption\(').Count
 if (!$expected -or $rows.Count -ne $expected) { throw 'Incomplete x64 renderer schema migration.' }
 $body = '#include "core.hpp"' + "`r`nnamespace ei {`r`nconst std::vector<Option>& schema() {`r`n    static const std::vector<Option> data = {`r`n" + ($rows -join "`r`n") + "`r`n    };`r`n    return data;`r`n}`r`n}`r`n"
-[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'obj/schema.cpp'), $body, [Text.UTF8Encoding]::new($true))
+$output=Join-Path $PSScriptRoot 'obj/schema.cpp'
+$null=[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($output))
+if(![IO.File]::Exists($output) -or [IO.File]::ReadAllText($output) -cne $body){
+    [IO.File]::WriteAllText($output, $body, [Text.UTF8Encoding]::new($true))
+}
