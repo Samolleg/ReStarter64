@@ -1,10 +1,8 @@
 # ReStarter64
 
-Сборка: `powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1 -Configuration Release64`.
-Результат: `EIStarter/bin/Release64/ReStarter64.exe`, его config и пять System.* DLL.
-`RESTARTER64` и PlatformTarget=x64 задаются только в Release64. x86-профиль и UI сохранены.
+Сборка из проектного PowerShell 7.6.10 — `./build.ps1 -OutputPath <каталог>`. Результат — нативные ReStarter64.exe и ReStarter64.pdb.
 
-Размещение: ReStarter64 с зависимостями в корне игры, отдельный движок
+Размещение: ReStarter64 в корне игры, отдельный движок
 `Engine64/EIRebuild64.exe`. Путь можно изменить в `restarter64.config`,
 `[Settings] ExecutablePath=Engine64\EIRebuild64.exe`; имя EXE фиксировано,
 каталог Engine запрещён. Данные Base/MODS и пользовательский background.jpg общие,

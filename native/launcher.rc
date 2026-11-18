@@ -1,11 +1,11 @@
 #include <windows.h>
-101 ICON "../EIStarter/Misc/favicon.ico"
-102 RCDATA "../EIStarter/Localization/UiText.tsv"
-103 RCDATA "../EIStarter/Misc/restarter-defaults.xml"
-104 RCDATA "../EIStarter/background.jpg"
-110 RCDATA "../EIStarter/Misc/ReStarter64/NVIDIA-DLSS-LICENSE.txt"
-111 RCDATA "../EIStarter/Misc/ReStarter64/THIRD_PARTY.md"
-112 RCDATA "../EIStarter/Misc/ReStarter64/Microsoft-MIT.txt"
+101 ICON "resources/favicon.ico"
+102 RCDATA "resources/UiText.tsv"
+103 RCDATA "resources/restarter-defaults.xml"
+104 RCDATA "resources/background.jpg"
+110 RCDATA "resources/NVIDIA-DLSS-LICENSE.txt"
+111 RCDATA "resources/THIRD_PARTY.md"
+112 RCDATA "resources/Microsoft-MIT.txt"
 1 RT_MANIFEST "launcher.manifest"
 1 VERSIONINFO
 FILEVERSION 1,0,0,0
