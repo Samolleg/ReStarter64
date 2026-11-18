@@ -16,6 +16,6 @@ $OutputPath = [IO.Path]::GetFullPath($OutputPath)
 New-Item -ItemType Directory -Force -Path $obj,$OutputPath | Out-Null
 & (Join-Path $PSScriptRoot 'native/Generate-Schema.ps1')
 $msbuild=Join-Path $vs 'MSBuild/Current/Bin/MSBuild.exe'
-& $msbuild (Join-Path $PSScriptRoot 'native/ReStarter64.vcxproj') /nologo /nr:false /m:1 /v:minimal /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64 "/p:VCToolsVersion=$([IO.Path]::GetFileName($vc))" "/p:NativeOutput=$OutputPath"
+& (Join-Path $PSScriptRoot 'tools/invoke-build.ps1') $msbuild (Join-Path $PSScriptRoot 'native/ReStarter64.vcxproj') /nologo /nr:false /m:1 /v:minimal /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64 "/p:VCToolsVersion=$([IO.Path]::GetFileName($vc))" "/p:NativeOutput=$OutputPath"
 if($LASTEXITCODE){throw "Native build failed: $LASTEXITCODE"}
 Write-Host "Native ReStarter64: $OutputPath"
