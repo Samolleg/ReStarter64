@@ -589,7 +589,34 @@ void Game::start(const Mod &mod)
         !exists(join(mod.path, L"config.reg")))
         fail(tr(L"NoMods"));
     selectMod(mod);
-    loadProfile(profilePath());
+    refreshProfile();
+    Ini renderer(join(root, L"Config64\\rddraw.ini"));
+    const auto dimension = [&](const wchar_t *key) {
+        const S raw = renderer.get(L"graphics", key, L"0");
+        wchar_t *end = nullptr;
+        const long n = wcstol(raw.c_str(), &end, 10);
+        return *end == 0 && n > 0 && n <= 16384 ? n : 0L;
+    };
+    long width = dimension(L"window_width"), height = dimension(L"window_height");
+    if (!width || !height)
+    {
+        DEVMODEW mode{};
+        mode.dmSize = sizeof(mode);
+        if (!EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &mode))
+            fail(text(L"Cannot read the desktop resolution.", L"Не удалось определить разрешение экрана."));
+        width = mode.dmPelsWidth;
+        height = mode.dmPelsHeight;
+    }
+    const S resolution = std::to_wstring(width) + L"x" + std::to_wstring(height);
+    const auto prior = readSetting(L"EvilIslands\\General Settings", L"VideoResolution");
+    const auto desired = strValue(prior.section, prior.name, resolution);
+    Ini gameSettings(join(root, L"Config64\\settings.ini"));
+    if (gameSettings.get(L"General Settings", L"VideoResolution") != resolution)
+        gameSettings.set(L"General Settings", L"VideoResolution", resolution);
+    gameSettings.save([&] {
+        if (!(prior == desired))
+            commitProfile({{prior.id(), prior}}, {{desired.id(), desired}});
+    });
     S command = L"\"" + path + L"\" -profile \"" + profilePath() + L"\" --mod \"" + mod.path + L"\"";
     std::vector<wchar_t> arguments(command.begin(), command.end());
     arguments.push_back(0);
