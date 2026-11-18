@@ -1,3 +1,5 @@
+#requires -Version 7.6.10
+#requires -PSEdition Core
 param([string]$OutputPath = (Join-Path $PSScriptRoot 'native/bin64'))
 $ErrorActionPreference = 'Stop'
 $locator = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
