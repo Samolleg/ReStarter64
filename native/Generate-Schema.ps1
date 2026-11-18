@@ -1,3 +1,5 @@
+#requires -Version 7.6.10
+#requires -PSEdition Core
 $ErrorActionPreference = 'Stop'
 # Build-time migration of the existing option contract; no CLR is used by the EXE.
 $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../EIStarter/REG_INI_IO/OwnedRendererSchema64.cs') -Raw -Encoding UTF8

@@ -1,3 +1,5 @@
+#requires -Version 7.6.10
+#requires -PSEdition Core
 param([string]$EvidenceDirectory, [string]$LegacyRoot)
 $ErrorActionPreference = 'Stop'
 if (!$EvidenceDirectory -or !$LegacyRoot) { throw 'Specify private EvidenceDirectory and a read-only LegacyRoot containing the three legacy import files.' }
