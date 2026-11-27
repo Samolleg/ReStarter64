@@ -211,7 +211,7 @@ static LRESULT paintButton(DRAWITEMSTRUCT *d)
     S caption = windowText(d->hwndItem);
     int id = GetDlgCtrlID(d->hwndItem);
     bool main = GetParent(d->hwndItem) == mainWindow;
-    bool navigation = (main && id >= 11 && id <= 15) || GetPropW(d->hwndItem, L"navigation");
+    bool navigation = (main && ((id >= 11 && id <= 15) || id == 18)) || GetPropW(d->hwndItem, L"navigation");
     bool theme = main && (id == 16 || id == 17);
     bool chosen = GetPropW(d->hwndItem, L"selected") != nullptr;
     if (theme)
@@ -256,6 +256,29 @@ static LRESULT paintButton(DRAWITEMSTRUCT *d)
     {
         icon(d->hDC, d->rcItem.left + px(12), r.top + (r.bottom - r.top - px(22)) / 2, id - 210, c);
         r.left = d->rcItem.left + px(43);
+    }
+    if (main && id == 18)
+    {
+        Gdiplus::Graphics g(d->hDC);
+        g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+        const float scale = dpi / 96.F;
+        g.TranslateTransform(float(r.left), (r.top + r.bottom - 18 * scale) / 2);
+        g.ScaleTransform(scale, scale);
+        Gdiplus::GraphicsPath dough(Gdiplus::FillModeAlternate), icing(Gdiplus::FillModeAlternate);
+        dough.AddEllipse(1.F, 1.F, 16.F, 16.F);
+        dough.AddEllipse(6.5F, 6.5F, 5.F, 5.F);
+        icing.AddEllipse(2.F, 1.5F, 14.F, 14.F);
+        icing.AddEllipse(6.F, 6.F, 6.F, 6.F);
+        Gdiplus::SolidBrush crust(Gdiplus::Color(157, 88, 49)), frosting(Gdiplus::Color(241, 137, 174));
+        Gdiplus::Pen sprinkle(Gdiplus::Color(255, 247, 199), 1.2F);
+        g.FillPath(&crust, &dough);
+        g.FillPath(&frosting, &icing);
+        g.DrawLine(&sprinkle, 4.8F, 5.2F, 6.F, 4.F);
+        g.DrawLine(&sprinkle, 11.F, 4.F, 12.4F, 4.7F);
+        g.DrawLine(&sprinkle, 13.4F, 8.F, 14.4F, 9.F);
+        g.DrawLine(&sprinkle, 4.5F, 11.F, 5.7F, 12.F);
+        g.DrawLine(&sprinkle, 10.F, 13.6F, 11.4F, 13.F);
+        r.left += px(24);
     }
     if (toggle)
     {
@@ -463,12 +486,12 @@ static void mainLayout()
     int x = 32;
     HDC dc = GetDC(mainWindow);
     auto previous = SelectObject(dc, font);
-    for (size_t i : {2u, 3u, 4u, 6u})
+    for (size_t i : {2u, 3u, 4u, 9u, 6u})
     {
         S label = windowText(mainControls[i]);
         SIZE size{};
         GetTextExtentPoint32W(dc, label.c_str(), (int)label.size(), &size);
-        int bw = MulDiv(size.cx, 96, dpi) + 36;
+        int bw = MulDiv(size.cx, 96, dpi) + 28 + (i == 9 ? 24 : 0);
         place(mainControls[i], x, footer + 124, bw, 40);
         x += bw + 8;
     }
@@ -507,6 +530,7 @@ static void mainLabels()
     SetWindowTextW(mainControls[6], currentLanguage.c_str());
     SetWindowTextW(mainControls[7], tr(L"DarkTheme").c_str());
     SetWindowTextW(mainControls[8], tr(L"LightTheme").c_str());
+    SetWindowTextW(mainControls[9], tr(L"Support").c_str());
     S title = selected >= 0 ? modifications[selected].title : tr(L"NoMods");
     if (selected >= 0 && !modifications[selected].version.empty())
         title += L"  ·  " + modifications[selected].version;
@@ -522,8 +546,17 @@ static void mainCreate()
     SendMessageW(modCombo, WM_SETFONT, (WPARAM)choiceFont, FALSE);
     SendMessageW(playButton, WM_SETFONT, (WPARAM)playFont, FALSE);
     mainControls = {modCombo, playButton};
-    for (int i = 0; i < 7; i++)
-        mainControls.push_back(button(mainWindow, L"", 11 + i));
+    mainControls.resize(10);
+    for (int id : {11, 12, 13, 18, 14, 15, 16, 17})
+    {
+        HWND control = button(mainWindow, L"", id);
+        if (id == 18)
+        {
+            mainControls[9] = control;
+        }
+        else
+            mainControls[id - 9] = control;
+    }
     S last = setting(L"ModSel");
     for (size_t i = 0; i < modifications.size(); i++)
     {
@@ -640,7 +673,10 @@ static LRESULT CALLBACK mainProc(HWND w, UINT m, WPARAM a, LPARAM b)
                     information();
                     break;
                 case 13:
-                    open(w, L"https://vk.ru/ei_dejavu");
+                    open(w, L"https://dejavu-game.ru/");
+                    break;
+                case 18:
+                    open(w, L"https://vk.ru/ei_dejavu?w=donut_payment-237578025");
                     break;
                 case 14:
                     about();
