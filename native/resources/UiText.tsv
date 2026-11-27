@@ -3,6 +3,7 @@ Play|PLAY  ›|ИГРАТЬ  ›|SPIELEN  ›|JOUER  ›|GRAJ  ›|플레이  �
 Settings|Settings|Настройки|Einstellungen|Paramètres|Ustawienia|설정|设置
 Information|Information|Информация|Informationen|Informations|Informacje|정보|信息
 Website|Website|Сайт|Webseite|Site web|Strona|웹사이트|网站
+Support|Support|Поддержать|Unterstützen|Soutenir|Wesprzyj|후원하기|赞助
 AboutMod|About mod|О моде|Mod-Info|À propos|O modzie|모드 정보|模组信息
 More|More ···|Ещё ···|Mehr ···|Plus ···|Więcej ···|더 보기 ···|更多 ···
 Uninstall|Uninstall|Удаление|Deinstallieren|Désinstaller|Odinstaluj|제거|卸载
@@ -158,6 +159,7 @@ OwnedRendererF10Hint|Press F10 in the game to open the renderer settings and rea
 OwnedRendererUnavailable|Renderer settings are unavailable in this Engine folder.|Настройки рендера недоступны в этой папке Engine.|Renderereinstellungen sind in diesem Engine-Ordner nicht verfügbar.|Les réglages du rendu sont indisponibles dans ce dossier Engine.|Ustawienia renderera są niedostępne w tym folderze Engine.|이 Engine 폴더에서는 렌더러 설정을 사용할 수 없습니다.|此 Engine 文件夹中无法使用渲染器设置。
 OwnedRendererPreset|Graphics preset|Пресет графики|Grafikprofil|Préréglage graphique|Profil graficzny|그래픽 프리셋|画质预设
 OwnedPresetAuto|Auto|Авто|Automatisch|Auto|Auto|자동|自动
+OwnedPresetLowest|Lowest|Минимальный|Minimal|Minimal|Minimalny|최저|最低
 OwnedPreset0|Low|Низкий|Niedrig|Faible|Niski|낮음|低
 OwnedPreset1|Medium|Средний|Mittel|Moyen|Średni|중간|中
 OwnedPreset2|High|Высокий|Hoch|Élevé|Wysoki|높음|高

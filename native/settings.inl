@@ -29,19 +29,23 @@ struct Settings
     std::vector<Block> blocks;
     std::vector<S> groupTitles;
     std::vector<bool> expanded;
-    int page = 0, scroll = 0, total = 0, layoutWidth = 0, layoutDepth = 0, presetOffset = 1, adapterState = -1;
-    bool updating = false, rendererAvailable = false, autoPreset = true, confirmPreset = false;
+    int page = 0, scroll = 0, total = 0, layoutWidth = 0, layoutDepth = 0, adapterState = -1;
+    bool updating = false, rendererAvailable = false, autoPreset = true, confirmPreset = false, autoRequested = false;
+    int legacyRayPreset = -1;
     std::unique_ptr<Ini> renderer, hud;
     S hudName, rendererError;
     Values baseline;
     Ini launcher{join(root, L"restarter64.config")};
     std::vector<S> displayModes;
 };
+constexpr int graphicsPresetCount = 5, rayPresetCount = 4;
 static Settings *currentSettings = nullptr;
 static bool interfaceKey(const Option &o)
 {
     S key = o.key;
-    return o.category == 11 || (o.category == 8 && key != L"confine_cursor" && key.find(L"highlight_") != 0);
+    if (key == L"hud_width" || key == L"confine_cursor" || key == L"camera_pan_smoothing")
+        return false;
+    return o.category == 11 || (o.category == 8 && (key == L"highlight_alt" || key.find(L"highlight_") != 0));
 }
 static S choiceLabel(const S &s)
 {
@@ -179,7 +183,7 @@ static void select(Row &r, int choice)
         }
     if (choice >= 0)
     {
-        if (r.key == L"$preset")
+        if (r.key == L"$preset" || r.key == L"$rayPreset")
             return;
         if (choice >= r.knownChoices)
         {
@@ -312,7 +316,7 @@ static void rowFields(Settings &s, int onlyPage = 0)
         {
             r.drop =
                 control(s.canvas, L"COMBOBOX", L"", 1000 + index,
-                        WS_TABSTOP | CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL);
+                        WS_TABSTOP | CBS_DROPDOWN | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL);
             SendMessageW(r.drop, WM_SETFONT, (WPARAM)sectionFont, FALSE);
             SendMessageW(r.drop, CB_SETITEMHEIGHT, (WPARAM)-1, px(20));
             SendMessageW(r.drop, CB_SETITEMHEIGHT, 0, px(24));
@@ -336,7 +340,7 @@ static void rowFields(Settings &s, int onlyPage = 0)
         else
         {
             int initial = -1;
-            if (r.key != L"$preset")
+            if (r.key != L"$preset" && r.key != L"$rayPreset")
                 try
                 {
                     double n = r.option ? parsed(*r.option, r.value) : numeric(r.value);
@@ -367,7 +371,7 @@ static void rowFields(Settings &s, int onlyPage = 0)
                     r.buttons.push_back(w);
                 }
             }
-            select(r, initial);
+            select(r, r.key == L"$rayPreset" ? r.choice : initial);
         }
         if (r.drop)
             SetWindowSubclass(
@@ -375,42 +379,6 @@ static void rowFields(Settings &s, int onlyPage = 0)
                 [](HWND w, UINT m, WPARAM a, LPARAM b, UINT_PTR, DWORD_PTR) -> LRESULT {
                     if (m == WM_SETFOCUS && ensureVisible)
                         ensureVisible(w);
-                    if (m == WM_ERASEBKGND)
-                        return 1;
-                    if (m == WM_PAINT)
-                    {
-                        PAINTSTRUCT ps;
-                        HDC dc = BeginPaint(w, &ps);
-                        RECT rect;
-                        GetClientRect(w, &rect);
-                        FillRect(dc, &rect, surfaceBrush);
-                        HBRUSH border = CreateSolidBrush(dark ? RGB(77, 80, 86) : RGB(200, 203, 208));
-                        FrameRect(dc, &rect, border);
-                        DeleteObject(border);
-                        RECT arrow{rect.right - px(18), 1, rect.right - 1, rect.bottom - 1};
-                        HBRUSH fill = CreateSolidBrush(RGB(225, 226, 229));
-                        FillRect(dc, &arrow, fill);
-                        DeleteObject(fill);
-                        POINT points[] = {{arrow.left + px(6), rect.bottom / 2 - px(1)},
-                                          {arrow.right - px(5), rect.bottom / 2 - px(1)},
-                                          {(arrow.left + arrow.right) / 2, rect.bottom / 2 + px(3)}};
-                        auto pen = SelectObject(dc, GetStockObject(BLACK_PEN)),
-                             brush = SelectObject(dc, GetStockObject(BLACK_BRUSH));
-                        Polygon(dc, points, 3);
-                        SelectObject(dc, pen);
-                        SelectObject(dc, brush);
-                        SetTextColor(dc, ink());
-                        SetBkMode(dc, TRANSPARENT);
-                        SelectObject(dc, sectionFont);
-                        RECT textRect = rect;
-                        textRect.left += px(6);
-                        textRect.right = arrow.left - px(4);
-                        auto text = windowText(w);
-                        DrawTextW(dc, text.c_str(), -1, &textRect,
-                                  DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
-                        EndPaint(w, &ps);
-                        return 0;
-                    }
                     return DefSubclassProc(w, m, a, b);
                 },
                 4, 0);
@@ -491,8 +459,8 @@ static void syncPreset(Settings &s, bool manualChoice = false)
         s.autoPreset = false;
         s.confirmPreset = true;
     }
-    int detected = 4;
-    for (int p = 0; !s.autoPreset && p < 4; p++)
+    int detected = graphicsPresetCount;
+    for (int p = 0; !s.autoPreset && p < graphicsPresetCount; p++)
     {
         bool match = true;
         for (auto &r : s.rows)
@@ -517,7 +485,45 @@ static void syncPreset(Settings &s, bool manualChoice = false)
     }
     for (auto &r : s.rows)
         if (r.key == L"$preset")
-            select(r, s.autoPreset ? 0 : detected + s.presetOffset);
+            select(r, s.autoPreset ? 0 : detected + 1);
+}
+static void setOptionValue(Row &row, double value)
+{
+    row.value = raw(*row.option, value);
+    if (row.edit)
+        SetWindowTextW(row.edit, row.value.c_str());
+    else
+        select(row, (int)(value - row.minimum));
+}
+static void syncRayPreset(Settings &s)
+{
+    bool tableMatches[rayPresetCount] = {true, true, true, true};
+    bool rayEnabled = false;
+    for (const auto &r : s.rows)
+    {
+        if (!r.option || r.option->rayPresets.empty())
+            continue;
+        try
+        {
+            const double value = parsed(*r.option, r.edit ? windowText(r.edit) : r.value);
+            if (r.type == 0 && r.option->rayPresets[0] == 0 && value != 0)
+                rayEnabled = true;
+            for (int tier = 1; tier < rayPresetCount; tier++)
+                tableMatches[tier] = tableMatches[tier] && value == r.option->rayPresets[tier];
+        }
+        catch (...)
+        {
+            for (auto &match : tableMatches)
+                match = false;
+        }
+    }
+    tableMatches[0] = tableMatches[0] && !rayEnabled;
+    int tier = 0;
+    while (tier < rayPresetCount && !tableMatches[tier])
+        tier++;
+    for (auto &r : s.rows)
+        if (r.key == L"$rayPreset")
+            select(r, tier);
 }
 static void buildSettings(Settings &s)
 {
@@ -552,16 +558,15 @@ static void buildSettings(Settings &s)
     preset.locked = !s.rendererAvailable;
     S firstRun = lower(s.renderer->get(L"setup", L"first_run_done"));
     s.autoPreset = !(firstRun == L"true" || firstRun == L"on" || firstRun == L"1");
-    s.presetOffset = s.autoPreset ? 1 : 0;
-    if(s.presetOffset) preset.choices.push_back(tr(L"OwnedPresetAuto"));
+    preset.choices.push_back(tr(L"OwnedPresetAuto"));
+    preset.choices.push_back(tr(L"OwnedPresetLowest"));
     for (int i = 0; i < 5; i++)
         preset.choices.push_back(tr(L"OwnedPreset" + std::to_wstring(i)));
     s.rows.push_back(preset);
     Row resolution;
     resolution.key = L"$resolution";
-    resolution.label = text(L"Screen resolution", L"Разрешение экрана");
     resolution.category = 0;
-    resolution.tip = text(L"Window size. Borderless fullscreen uses the monitor resolution.", L"Размер окна. Полный экран без рамки использует разрешение монитора.");
+    resolution.label = text(L"Window resolution (e.g. 1280x720)", L"Разрешение окна (например, 1280x720)");
     resolution.locked = !s.rendererAvailable;
     resolution.choices = {text(L"Automatic (monitor)", L"Автоматически (по монитору)")};
     for (const auto &mode : resolutions()) resolution.choices.push_back(mode);
@@ -570,8 +575,25 @@ static void buildSettings(Settings &s)
     resolution.initial = resolution.value = width == L"0" && height == L"0"
         ? resolution.choices[0] : width + L"x" + height;
     s.rows.push_back(resolution);
+    const int version = _wtoi(s.renderer->get(L"setup", L"settings_version", L"0").c_str());
+    if (version < 7)
+    {
+        const S tier = s.renderer->get(L"graphics", L"rt_quality", L"5");
+        if (tier.size() == 1 && tier[0] >= L'0' && tier[0] <= L'4')
+            s.legacyRayPreset = std::min(3, int(tier[0] - L'0'));
+    }
     for (auto &o : schema())
     {
+        if (S(o.key) == L"rt_sun_shadows")
+        {
+            Row ray;
+            ray.key = L"$rayPreset";
+            ray.category = o.category;
+            ray.label = text(L"Ray tracing preset", L"Пресет трассировки лучей");
+            ray.choices = {tr(L"Off"), tr(L"OwnedPreset0"), tr(L"OwnedPreset1"), tr(L"OwnedPreset2"), tr(L"OwnedPreset4")};
+            ray.locked = !s.rendererAvailable;
+            s.rows.push_back(ray);
+        }
         if (S(o.key) == L"window_width" || S(o.key) == L"window_height") continue;
         Row r;
         r.label = language == 2 ? o.russian : o.english;
@@ -586,6 +608,8 @@ static void buildSettings(Settings &s)
             if (legacy>=1 && legacy<=10) fallback = S(o.key)==L"upscaler" ? (legacy<=5?L"1":L"2") : std::to_wstring((legacy-1)%5);
         }
         r.initial = r.value = s.renderer->get(L"graphics", o.key, fallback);
+        if (s.legacyRayPreset >= 0 && !o.rayPresets.empty())
+            r.initial = r.value = raw(o, o.rayPresets[s.legacyRayPreset]);
         if (interfaceKey(o))
         {
             if (s.hud->had) r.initial = r.value = s.hud->getAny(o.key, r.initial);
@@ -623,6 +647,7 @@ static void buildSettings(Settings &s)
     for(auto &r:s.rows) r.knownChoices=(int)r.choices.size();
     rowFields(s);
     syncPreset(s);
+    syncRayPreset(s);
     s.updating = false;
     const wchar_t *tabs[] = {L"tabGraphics", L"tabMultiplayer", L"tabCamera", L"tabPaths"};
     for (int page = 0; page < 4; page++)
@@ -654,7 +679,7 @@ static void buildSettings(Settings &s)
         for (int i : order)
         {
             auto &r = s.rows[i];
-            if (r.page != page || (page == 0 && ((!r.option && r.key != L"$resolution") || !s.rendererAvailable)))
+            if (r.page != page || (page == 0 && ((!r.option && r.key != L"$resolution" && r.key != L"$rayPreset") || !s.rendererAvailable)))
                 continue;
             if (r.category >= 0 && previous != r.category)
                 addBlock(s, page, 4, s.groupTitles[r.category], -1, r.category);
@@ -690,6 +715,8 @@ static void availability(Settings &s)
         if(key==L"shadow_cascade_quality" || key==L"shadow_close_cascades" || key==L"shadow_far") enabled &= value(L"shadows")!=0;
         if(key==L"point_shadow_quality") enabled &= value(L"point_shadows")!=0;
         if(key==L"shadow_softness") enabled &= value(L"shadows")!=0 || value(L"point_shadows")!=0;
+        if (key == L"lod_pixel_error") enabled &= value(L"lod") != 0;
+        if (key == L"frame_generation_min_fps") enabled &= value(L"frame_generation") != 0;
         if(key==L"terrain_cliffs") enabled &= value(L"terrain_blend")!=0;
         if(key==L"neighbour_fog_range") enabled &= value(L"neighbour_maps")!=0;
         if(key==L"ground_cover_distance") enabled &= value(L"ground_cover")!=0;
@@ -931,16 +958,16 @@ static void revealSetting(HWND window)
 }
 static void preset(Settings &s, int index)
 {
-    if (!s.rendererAvailable || index < 0 || index > 5)
+    if (!s.rendererAvailable || index < 0 || index > graphicsPresetCount)
         return;
-    if(index-s.presetOffset==4) return;
     s.updating = true;
-    s.autoPreset = s.presetOffset && index == 0;
+    s.autoPreset = index == 0;
+    s.autoRequested = s.autoPreset;
     s.confirmPreset = !s.autoPreset;
     if (s.autoPreset)
     {
         for (auto &r : s.rows)
-            if (r.option)
+            if (r.option && !r.option->presets.empty())
             {
                 r.value = r.initial;
                 if (r.edit)
@@ -963,18 +990,13 @@ static void preset(Settings &s, int index)
     }
     else
     {
-        int p = index - s.presetOffset;
-        if (p >= 0 && p < 4)
+        int p = index - 1;
+        if (p >= 0 && p < graphicsPresetCount)
         {
             for (auto &r : s.rows)
                 if (r.option && !r.option->presets.empty())
                 {
-                    double n = r.option->presets[p];
-                    r.value = raw(*r.option, n);
-                    if (r.edit)
-                        SetWindowTextW(r.edit, r.value.c_str());
-                    else
-                        select(r, (int)(n - r.minimum));
+                    setOptionValue(r, r.option->presets[p]);
                 }
         }
     }
@@ -1024,21 +1046,15 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
     std::set<S, Less> changedCamera;
     Ini next = *s.renderer, hudNext = *s.hud;
     bool hudChanged = false;
-    bool graphicsChanged = false;
+    bool graphicsChanged = false, rayChanged = false;
     for (auto &r : s.rows)
     {
         if (pathsOnly ? r.page != 3 : r.page == 3)
             continue;
         S value = r.edit ? windowText(r.edit) : r.value;
         if (r.drop)
-        {
-            int index = (int)SendMessageW(r.drop, CB_GETCURSEL, 0, 0);
-            if (index >= 0 && index < (int)r.choices.size())
-                value = r.choices[index];
-            else
-                value = r.initial;
-        }
-        if (r.key == L"$preset")
+            value = trim(windowText(r.drop));
+        if (r.key == L"$preset" || r.key == L"$rayPreset")
             continue;
         if (r.page == 2 && !value.empty())
         {
@@ -1057,11 +1073,20 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
         if (r.key == L"$resolution")
         {
             unsigned width = 0, height = 0;
-            wchar_t tail = 0;
-            if (value != r.choices[0] &&
-                (swscanf_s(value.c_str(), L"%ux%u%c", &width, &height, &tail, 1) != 2 ||
-                 width < 640 || height < 480 || width > 16384 || height > 16384))
-                fail(tr(L"InvalidResolution"));
+            if (value != r.choices[0])
+            {
+                const auto sep = value.find_first_of(L"xXхХ×");
+                auto dimension = [](const S &digits) -> unsigned {
+                    if (digits.empty() || digits.size() > 5 || digits.find_first_not_of(L"0123456789") != S::npos)
+                        return 0;
+                    return static_cast<unsigned>(_wtoi(digits.c_str()));
+                };
+                width = dimension(trim(value.substr(0, sep)));
+                height = sep == S::npos ? 0 : dimension(trim(value.substr(sep + 1)));
+                if (width < 640 || height < 480 || width > 16384 || height > 16384)
+                    fail(text(L"Enter a window size from 640x480 to 16384x16384.",
+                              L"Введите размер окна от 640×480 до 16384×16384."));
+            }
             next.set(L"graphics", L"window_width", std::to_wstring(width));
             next.set(L"graphics", L"window_height", std::to_wstring(height));
             continue;
@@ -1086,6 +1111,7 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
             if (same)
                 continue;
             next.set(L"graphics", r.key, raw(*r.option, n));
+            if (!r.option->rayPresets.empty()) rayChanged = true;
             if(interfaceKey(*r.option)) { hudNext.setAny(r.key, raw(*r.option,n)); hudChanged=true; }
             if (!r.option->presets.empty())
                 graphicsChanged = true;
@@ -1129,24 +1155,25 @@ static void saveSettings(Settings &s, bool pathsOnly = false)
         }
         changes[v.id()] = v;
     }
-    if(!pathsOnly)
-    {
-        const Row *w=nullptr,*h=nullptr;
-        for(auto &r:s.rows) { if(r.key==L"window_width") w=&r; if(r.key==L"window_height") h=&r; }
-        if(w && h)
-        {
-            S width=w->edit?windowText(w->edit):w->value, height=h->edit?windowText(h->edit):h->value;
-            if(width!=w->initial || height!=h->initial)
-                if((parsed(*w->option,width)==0)!=(parsed(*h->option,height)==0)) fail(tr(L"OwnedWindowPair"));
-        }
-    }
     validateCamera(s, camera, changedCamera);
     if (!pathsOnly && s.rendererAvailable)
     {
         // Auto uses the renderer's existing one-time GPU setup; the renderer
         // sets this back to true only after the player confirms its suggestion.
-        if (!s.autoPreset && (s.confirmPreset || graphicsChanged))
+        if (rayChanged && s.legacyRayPreset >= 0)
+        {
+            // Old versions stored the tier instead of the individual values.
+            for (auto &r : s.rows)
+                if (r.option && !r.option->rayPresets.empty())
+                    next.set(L"graphics", r.key, r.edit ? windowText(r.edit) : r.value);
+            next.set(L"graphics", L"rt_quality", L"5");
+        }
+        if (s.autoRequested && s.autoPreset)
+            next.set(L"setup", L"first_run_done", L"false");
+        else if (s.confirmPreset || graphicsChanged)
             next.set(L"setup", L"first_run_done", L"true");
+        if (!s.renderer->had && next.content != s.renderer->content)
+            next.set(L"setup", L"settings_version", L"14");
     }
     if (!pathsOnly && (s.confirmPreset || graphicsChanged || next.content != s.renderer->content) &&
         !s.rendererAvailable)
@@ -1184,7 +1211,7 @@ static void resetSettings(Settings &s)
     s.updating = true;
     for (auto &r : s.rows)
     {
-        if (r.option || r.key == L"$preset" || r.page == 3)
+        if (r.option || r.key == L"$preset" || r.key == L"$rayPreset" || r.page == 3)
             continue;
         auto i = defaults.find(r.baseline.id());
         if (i == defaults.end())
@@ -1275,8 +1302,8 @@ static void handleSettingCommand(Settings &s, int id, int code)
         if (code == EN_CHANGE || code == CBN_SELCHANGE)
         {
             auto &r = s.rows[id - 1000];
-            if (r.option)
-                syncPreset(s, !r.option->presets.empty());
+            if (r.option && !r.option->presets.empty()) syncPreset(s, true);
+            if (r.option && !r.option->rayPresets.empty()) syncRayPreset(s);
             availability(s);
         }
         return;
@@ -1297,9 +1324,23 @@ static void handleSettingCommand(Settings &s, int id, int code)
             preset(s, j);
             return;
         }
+        if (r.key == L"$rayPreset")
+        {
+            if (j < rayPresetCount)
+            {
+                s.updating = true;
+                for (auto &option : s.rows)
+                    if (option.option && !option.option->rayPresets.empty())
+                        setOptionValue(option, option.option->rayPresets[j]);
+                s.updating = false;
+                syncRayPreset(s);
+                availability(s);
+            }
+            return;
+        }
         select(r, j);
-        if (r.option)
-            syncPreset(s, !r.option->presets.empty());
+        if (r.option && !r.option->presets.empty()) syncPreset(s, true);
+        if (r.option && !r.option->rayPresets.empty()) syncRayPreset(s);
         availability(s);
         return;
     }

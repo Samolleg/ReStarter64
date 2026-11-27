@@ -98,6 +98,7 @@ struct Option
     const wchar_t *english, *russian;
     std::vector<S> russianChoices;
     const wchar_t *textDefault = L"";
+    std::vector<double> rayPresets = {};
 };
 const std::vector<Option> &schema();
 struct Ini
